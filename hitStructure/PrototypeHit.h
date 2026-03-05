@@ -1,7 +1,3 @@
-//
-// Created by Maria on 22.03.2024 kolupanova@inr.ru
-//
-
 #ifndef UNPACKING_HIT_H
 #define UNPACKING_HIT_H
 
@@ -20,13 +16,9 @@ struct ChannelData : public TObject{
     double _chargeADC{NAN};
     double _chargePE_Integral{NAN};
     double _chargePE_Amplitude{NAN};
-    double _chargePE_Integral_XTalk_with_background{NAN};
-    double _chargePE_Amplitude_XTalk_with_background{NAN};
-    double _chargePE_Integral_XTalk_without_background{NAN};
-    double _chargePE_Amplitude_XTalk_without_background{NAN};
+    double _chargePE_Integral_XTalk{NAN};
+    double _chargePE_Amplitude_XTalk{NAN};
 
-    double _reconstructed_amplitude{NAN};
-    double _reconstructed_chargePE_Amplitude{NAN};
     int _overflow;
 
     ClassDef(ChannelData, 1);

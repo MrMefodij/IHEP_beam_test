@@ -18,7 +18,7 @@
 class HistogramManager {
 public:
     virtual ~HistogramManager() = default;
-    explicit HistogramManager(unsigned int count = CUBES_COUNT);
+    explicit HistogramManager(int count = CUBES_COUNT);
     TH2F* getHistogram(size_t index);
     void fillHistograms(unsigned int  index, double x, double y);
     void SetBinContent(unsigned int  index, double x, double y, double value);
@@ -51,8 +51,8 @@ public:
     void SetFiberLY_A_recon(unsigned int index, double x, double y);
     void FillAveragePlots(double x, double y, double x_ly, double y_ly);
     virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, double ly_x, double ly_y);
-    void PreparePlotsForMC(TDirectory* dirName, const std::map<unsigned int,CubePosition>* locationMap);
-    void PreparePlotsForGeometry(TDirectory* dirName, const std::map<unsigned int,CubePosition>* locationMap);
+    void PreparePlotsForMC(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
+    void PreparePlotsForGeometry(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
 protected:
     std::vector<std::unique_ptr<TH2F>> histogramsLY_;
     std::vector<std::unique_ptr<TH2F>> x_HistogramsLY_;

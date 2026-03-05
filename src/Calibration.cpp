@@ -40,8 +40,7 @@ bool Calibration::InitCalibByTXT_I() {
         map >> ch;
         if(std::floor(ch) == ch){
             map >> calibrationResultsI_[ch]._gain >> calibrationResultsI_[ch]._gain_error >> calibrationResultsI_[ch]._peak0 >>
-            calibrationResultsI_[ch]._peak0_error >> calibrationResultsI_[ch]._mean_with_background >> calibrationResultsI_[ch]._xTalk_with_background >>
-            calibrationResultsI_[ch]._mean_without_background >> calibrationResultsI_[ch]._xTalk_without_background;
+            calibrationResultsI_[ch]._peak0_error >> calibrationResultsI_[ch]._mean >> calibrationResultsI_[ch]._xTalk;
             if (verbose_){
                 std::cout << AS_KV(ch) << " " << calibrationResultsI_[ch]._gain << " " << calibrationResultsI_[ch]._gain_error << " " << calibrationResultsI_[ch]._peak0 << " " << calibrationResultsI_[ch]._peak0_error << std::endl;
             }
@@ -65,8 +64,7 @@ bool Calibration::InitCalibByTXT_A(){
         map >> ch;
         if(std::floor(ch) == ch){
             map >> calibrationResultsA_[ch]._gain >> calibrationResultsA_[ch]._gain_error >> calibrationResultsA_[ch]._peak0 >>
-            calibrationResultsA_[ch]._peak0_error >> calibrationResultsA_[ch]._mean_with_background >> calibrationResultsA_[ch]._xTalk_with_background >>
-            calibrationResultsA_[ch]._mean_without_background >> calibrationResultsA_[ch]._xTalk_without_background;
+            calibrationResultsA_[ch]._peak0_error >> calibrationResultsA_[ch]._mean >> calibrationResultsA_[ch]._xTalk;
             if (verbose_){
                 std::cout << AS_KV(ch) << " " << calibrationResultsA_[ch]._gain << " " << calibrationResultsA_[ch]._gain_error << " " << calibrationResultsA_[ch]._peak0 << " " << calibrationResultsA_[ch]._peak0_error << std::endl;
             }

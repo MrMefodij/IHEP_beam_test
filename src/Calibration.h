@@ -14,10 +14,8 @@ struct CalibResults{
     double _gain_error{NAN};
     double _peak0{NAN};
     double _peak0_error{NAN};
-    double _mean_with_background{NAN};
-    double _xTalk_with_background{NAN};
-    double _mean_without_background{NAN};
-    double _xTalk_without_background{NAN};
+    double _mean{NAN};
+    double _xTalk{NAN};
 };
 
 class Calibration {

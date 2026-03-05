@@ -18,9 +18,9 @@ struct GeomPosition{
 };
 
 struct CubeConnection{
-    unsigned int _x;
-    unsigned int _y;
-    unsigned int _z;
+    int _x;
+    int _y;
+    int _z;
 };
 
 struct CubePosition{
@@ -32,9 +32,7 @@ struct CubePosition{
 
 struct ChannelsVsCubes {
     char _side;
-    unsigned int _cube1;
-    unsigned int _cube2;
-    unsigned int _cube3;
+    std::vector<int> cubes;
 };
 
 struct NormalizationConst {
@@ -64,15 +62,16 @@ class Connection_Map {
 public:
     explicit Connection_Map(std::string map_file = CHANNELS_MAP, std::string cubes_map = CUBES_MAP, std::string cubes_location = CUBES_BOUNDARIES_MAP,
                             std::string channels_vs_cubes = CHANNELS_VS_CUBES, std::string cubes_normalization = CUBES_NORMALIZATION,
-                            std::string fibers_normalization = FIBERS_NORMALIZATION, std::string fibers_location = FIBERS_BOUNDARIES_MAP, unsigned int verbose=0);
+                            std::string fibers_normalization = FIBERS_NORMALIZATION, int verbose=0);
     void Init();
-    const std::map<unsigned int,GeomPosition>* GetChannelMap() const;
-    const std::map<unsigned int,CubeConnection>* GetCubesMap() const;
-    const std::map<unsigned int,CubePosition>* GetCubesLocation() const;
-    const std::map<unsigned int,ChannelsVsCubes>* GetChannelsVsCubes() const;
-    const std::map<unsigned int, NormalizationConst>* GetCubeNormalization() const;
-    const std::map<unsigned int, double>* GetFibersNormalization() const;
-    const std::map<unsigned int, FibrePosition>* GetFibersLocation() const;
+    const std::map<int,GeomPosition>* GetChannelMap() const;
+    const std::map<int,CubeConnection>* GetCubesMap() const;
+    const std::map<int,CubePosition>* GetCubesLocation() const;
+    const std::map<int, ChannelsVsCubes>* GetChannelsVsCubes() const;
+    const std::map<int, NormalizationConst>* GetCubeNormalization() const;
+    const std::map<int, double>* GetFibersNormalization() const;
+    const std::map<int, FibrePosition>* GetFibersLocation() const;
+
 private:
     void InitGeomByTXT();
     void InitCubesByTXT();
@@ -88,20 +87,17 @@ private:
     const std::string channelsVsCubesFileName_;
     const std::string cubes_normalizationFileName_;
     const std::string fibers_normalizationFileName_;
-    const std::string fibers_location_;
-    unsigned int verbose_;
-    std::map<unsigned int,GeomPosition> channelsMap_;
-    std::map<unsigned int,CubeConnection> cubesMap_;
-    std::map<unsigned int,CubePosition> cubesLocation_;
-    std::map<unsigned int,ChannelsVsCubes> channelsVsCubes_;
-    std::map<unsigned int,FibrePosition> fibersLocation_;
-
+    int verbose_;
+    std::map<int,GeomPosition> channelsMap_;
+    std::map<int,CubeConnection> cubesMap_;
+    std::map<int,CubePosition> cubesLocation_;
+    std::map<int,ChannelsVsCubes> channelsVsCubes_;
 
     bool cubesNormalization_Exist_;
-    std::map<unsigned int, NormalizationConst> cubesNormalization_;
+    std::map<int, NormalizationConst> cubesNormalization_;
 
     bool fibersNormalization_Exist_;
-    std::map<unsigned int, double> fibersNormalization_;
+    std::map<int, double> fibersNormalization_;
 };
 
 

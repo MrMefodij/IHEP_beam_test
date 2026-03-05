@@ -16,10 +16,10 @@
 ClassImp(ChannelData)
 ClassImp(PrototypeHit)
 
-Connection_Map::Connection_Map(std::string map_file, std::string cubes_map, std::string cubes_location, std::string channels_vs_cubes, std::string cubes_normalization, std::string fibers_normalization, std::string fibers_location, const unsigned int verbose)
+Connection_Map::Connection_Map(std::string map_file, std::string cubes_map, std::string cubes_location, std::string channels_vs_cubes, std::string cubes_normalization, std::string fibers_normalization, const int verbose)
 : channelsFileName_(std::move(map_file)), cubesFileName_(std::move(cubes_map)), cubesLocationFileName_(std::move(cubes_location)),
 channelsVsCubesFileName_(std::move(channels_vs_cubes)), cubes_normalizationFileName_(std::move(cubes_normalization)),
-fibers_normalizationFileName_(std::move(fibers_normalization)), fibers_location_(std::move(fibers_location)),verbose_(verbose){}
+fibers_normalizationFileName_(std::move(fibers_normalization)), verbose_(verbose){}
 
 void Connection_Map::Init(){
     if(channelsFileName_.find(".txt") != std::string::npos) InitGeomByTXT();
@@ -57,12 +57,6 @@ void Connection_Map::Init(){
         std::cerr << "Unexpected format of connection map" << std::endl;
     }
     std::cout << "Read: " << fibers_normalizationFileName_ << std::endl;
-
-    if(fibers_location_.find(".txt") != std::string::npos) FiberLocationByTXT();
-    else {
-        std::cerr << "Unexpected format of connection map" << std::endl;
-    }
-    std::cout << "Read: " << fibers_location_ << std::endl;
 }
 
 void Connection_Map::InitGeomByTXT(){
@@ -81,18 +75,18 @@ void Connection_Map::InitGeomByTXT(){
             continue; // skip malformed lines
         }
 
-        unsigned int ch;
+        int ch;
         try {
             ch = std::stoi(ch_str);
         } catch (...) {
             continue; // skip if channel is not a valid number
         }
 
-        float x = std::nanf(""), y = std::nanf(""), z = std::nanf("");
+        float x = -1.0, y = -1.0, z = -1.0;
 
-        if (x_str != "NaN") x = std::stof(x_str);
-        if (y_str != "NaN") y = std::stof(y_str);
-        if (z_str != "NaN") z = std::stof(z_str);
+        if (x_str != "-1") x = std::stof(x_str);
+        if (y_str != "-1") y = std::stof(y_str);
+        if (z_str != "-1") z = std::stof(z_str);
 
         channelsMap_[ch]._cube_x = x;
         channelsMap_[ch]._cube_y = y;
@@ -111,14 +105,15 @@ void Connection_Map::InitCubesByTXT(){
     }
     std::string header;
     std::getline(map, header);
-    while (!map.eof()){
-        unsigned int cube;
-        map >> cube;
-        if(std::floor(cube) == cube){
-            map >> cubesMap_[cube]._x >> cubesMap_[cube]._y >> cubesMap_[cube]._z;
-            if (verbose_){
-                std::cout << AS_KV(cube) << " " << cubesMap_[cube]._x << " " << cubesMap_[cube]._y << " " <<  cubesMap_[cube]._z << std::endl;
-            }
+        int cube;
+
+    while (map >> cube) {
+        map >> cubesMap_[cube]._x;
+        map >> cubesMap_[cube]._y;
+        map >> cubesMap_[cube]._z;
+
+        if (verbose_) {
+            std::cout << "Read cube: " << cube << std::endl;
         }
     }
 }
@@ -131,7 +126,7 @@ void Connection_Map::InitLocationByTXT(){
     std::string header;
     std::getline(map, header);
     while (!map.eof()){
-        unsigned int cube;
+        int cube;
         map >> cube;
         if(std::floor(cube) == cube){
             map >> cubesLocation_[cube]._x_min >> cubesLocation_[cube]._x_max >> cubesLocation_[cube]._y_min >> cubesLocation_[cube]._y_max;
@@ -143,22 +138,33 @@ void Connection_Map::InitLocationByTXT(){
     }
 }
 
-void Connection_Map::InitChannelsVsCubesByTXT(){
-    std::ifstream map(channelsVsCubesFileName_.c_str());
-    if(!map.is_open()){
-        throw std::exception();
-    }
-    std::string header;
-    std::getline(map, header);
-    while (!map.eof()){
-        unsigned int ch;
-        map >> ch;
-        if(std::floor(ch) == ch){
-            map >> channelsVsCubes_[ch]._side >>  channelsVsCubes_[ch]._cube1 >>  channelsVsCubes_[ch]._cube2 >>  channelsVsCubes_[ch]._cube3;
-            if (verbose_) {
-                std::cout << AS_KV(ch) << " " << channelsVsCubes_[ch]._side << " " <<  channelsVsCubes_[ch]._cube1 << " " <<
-                    channelsVsCubes_[ch]._cube2 << " " <<  channelsVsCubes_[ch]._cube3;
-            }
+void Connection_Map::InitChannelsVsCubesByTXT() {
+    std::ifstream mapFile(channelsVsCubesFileName_.c_str());
+    if (!mapFile.is_open()) throw std::runtime_error("File not found");
+
+    std::string line;
+    std::getline(mapFile, line);
+
+    while (std::getline(mapFile, line)) {
+        if (line.empty()) continue;
+
+        std::stringstream ss(line);
+        int ch;
+        char side;
+
+        if (!(ss >> ch >> side)) continue;
+
+        channelsVsCubes_[ch]._side = side;
+        channelsVsCubes_[ch].cubes.clear();
+
+        int temp_cube;
+        while (ss >> temp_cube) {
+            channelsVsCubes_[ch].cubes.push_back(temp_cube);
+        }
+
+        if (verbose_) {
+            std::cout << "Channel " << ch << " (" << side << ") has "
+                      << channelsVsCubes_[ch].cubes.size() << " cubes." << std::endl;
         }
     }
 }
@@ -176,7 +182,7 @@ void Connection_Map::InitCubesNormalizationByTXT(){
     std::string header;
     std::getline(flag, header);
     while (!flag.eof()) {
-        unsigned int cube;
+        int cube;
         flag >> cube;
         if(std::floor(cube) == cube) {
             char side;
@@ -206,7 +212,7 @@ void Connection_Map::InitFibersNormalizationByTXT() {
     std::string header;
     std::getline(flag, header);
     while (!flag.eof()) {
-        unsigned int cube;
+        int cube;
         flag >> cube;
         if(std::floor(cube) == cube){
             flag >> fibersNormalization_[cube];
@@ -215,52 +221,31 @@ void Connection_Map::InitFibersNormalizationByTXT() {
     fibersNormalization_Exist_ = true;
 }
 
-void Connection_Map::FiberLocationByTXT() {
-    std::ifstream flag(fibers_location_.c_str());
-    if(!flag.is_open()){
-        std::cerr << fibers_location_ << " not found. Fibers location is not available.\n";
-        return;
-    }
-    std::string header;
-    std::getline(flag, header);
-    while (!flag.eof()) {
-        unsigned int ch;
-        flag >> ch;
-        if(std::floor(ch) == ch){
-            flag >> fibersLocation_[ch].direction_ >> fibersLocation_[ch].x_min_ >> fibersLocation_[ch].x_max_ >> fibersLocation_[ch].y_min_ >> fibersLocation_[ch].y_max_;
-        }
-    }
-}
-
-const std::map<unsigned int,GeomPosition>* Connection_Map::GetChannelMap() const{
+const std::map<int,GeomPosition>* Connection_Map::GetChannelMap() const{
     return &channelsMap_;
 }
-const std::map<unsigned int,CubeConnection>* Connection_Map::GetCubesMap() const{
+const std::map<int,CubeConnection>* Connection_Map::GetCubesMap() const{
     return &cubesMap_;
 }
 
-const std::map<unsigned int,CubePosition>* Connection_Map::GetCubesLocation() const{
+const std::map<int,CubePosition>* Connection_Map::GetCubesLocation() const{
     return &cubesLocation_;
 }
 
-const std::map<unsigned int,ChannelsVsCubes>* Connection_Map::GetChannelsVsCubes() const{
+const std::map<int,ChannelsVsCubes>* Connection_Map::GetChannelsVsCubes() const{
     return &channelsVsCubes_;
 }
 
-const std::map<unsigned int, NormalizationConst>* Connection_Map::GetCubeNormalization() const{
+const std::map<int, NormalizationConst>* Connection_Map::GetCubeNormalization() const{
     if (cubesNormalization_Exist_){
         return &cubesNormalization_;
     }
     return nullptr;
 }
 
-const std::map<unsigned int, double>* Connection_Map::GetFibersNormalization() const {
+const std::map<int, double>* Connection_Map::GetFibersNormalization() const {
     if (fibersNormalization_Exist_){
         return &fibersNormalization_;
     }
     return nullptr;
-}
-
-const std::map<unsigned int, FibrePosition>* Connection_Map::GetFibersLocation() const {
-    return &fibersLocation_;
 }

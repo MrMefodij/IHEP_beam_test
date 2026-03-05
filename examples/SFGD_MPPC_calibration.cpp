@@ -91,7 +91,7 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
             if (charge == 'A') {
                 nfound = fTSpectrum->Search(hFEBCH,2,"",0.001);
             } else {
-                nfound = fTSpectrum->Search(hFEBCH,8,"",0.001);
+                nfound = fTSpectrum->Search(hFEBCH,4,"",0.002);
             }
 
             if(nfound > 0) {
@@ -111,7 +111,7 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
                     if ( (i == 0 && xpeaks[0] > first_peak) || ( i != 0  && xpeaks[i] > xpeaks[i - 1] && xpeaks[i] > last_peak + 5) )  {
                         TF1* fit_1;
                         if (charge == 'A') {
-                            fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 2, xpeaks[i] + 2);
+                            fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 3, xpeaks[i] + 3);
                         } else {
                             fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 10, xpeaks[i] + 10);
                         }

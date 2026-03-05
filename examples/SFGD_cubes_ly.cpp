@@ -13,18 +13,13 @@
 int main( int argc, char **argv ) {
     std::string filename = argv[1];
     Connection_Map* connectionMap;
-    if (filename.find("testbench_61") != std::string::npos) {
-        std::cout << "Applying angle cubes location\n";
-        connectionMap = new Connection_Map(CHANNELS_MAP, CUBES_MAP,CUBES_BOUNDARIES_MAP_ANGLE,CHANNELS_VS_CUBES,CUBES_NORMALIZATION,FIBERS_NORMALIZATION, FIBERS_BOUNDARIES_MAP,  0);
-    } else {
         connectionMap = new Connection_Map();
-    }
-    connectionMap->Init();
-    const std::map<unsigned int,CubeConnection>* map = connectionMap->GetCubesMap();
-    const std::map<unsigned int,CubePosition>* locationMap = connectionMap->GetCubesLocation();
-    const std::map<unsigned int,GeomPosition>* channels_map = connectionMap->GetChannelMap();
-    // const std::map<unsigned int, NormalizationConst>* cubes_normalization = connectionMap->GetCubeNormalization();
-    const std::map<unsigned int, double>* fibers_normalization = connectionMap->GetFibersNormalization();
+        connectionMap->Init();
+    const std::map<int,CubeConnection>* map = connectionMap->GetCubesMap();
+    const std::map<int,CubePosition>* locationMap = connectionMap->GetCubesLocation();
+    const std::map<int,GeomPosition>* channels_map = connectionMap->GetChannelMap();
+    // const std::map<int, NormalizationConst>* cubes_normalization = connectionMap->GetCubeNormalization();
+    const std::map<int, double>* fibers_normalization = connectionMap->GetFibersNormalization();
 
     LyHistogramManager hists;
     hists.SetTitlesHist("X[mm]","Y[mm]","N");
@@ -79,27 +74,27 @@ int main( int argc, char **argv ) {
 
                 if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() && zt != hit->_channelsData.end()) {
                     if (x_position >= x_min &&  x_position <= x_max+0.5 && y_position >= y_min && y_position <= y_max+0.5) {
-                        if (xt->_reconstructed_chargePE_Amplitude > 1 && yt->_reconstructed_chargePE_Amplitude > 1 && zt->_amplitude > 1 && xt->_quality < 100 && yt->_quality < 100 ) {
+                        if (xt->_chargePE_Amplitude > 1 && yt->_chargePE_Amplitude > 1 && zt->_amplitude > 1 && xt->_quality < 100 && yt->_quality < 100 ) {
                             // hists.fillHistograms(j,  x_position, y_position);
-                            hists.SetBinContentLY(cube,  x_position, y_position, xt->_reconstructed_chargePE_Amplitude, yt->_reconstructed_chargePE_Amplitude);
+                            hists.SetBinContentLY(cube,  x_position, y_position, xt->_chargePE_Amplitude, yt->_chargePE_Amplitude);
                             // double x_ly = xt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).x_;
                             // double y_ly = yt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).y_;
-                            double x_ly = xt->_reconstructed_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
-                            double y_ly = yt->_reconstructed_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
+                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
+                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
                             if (xt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                x_ly = xt->_chargePE_Amplitude_XTalk_with_background / fibers_normalization->at(xt->_channel_id);
+                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
                             }
                             if (yt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                y_ly = yt->_chargePE_Amplitude_XTalk_with_background / fibers_normalization->at(yt->_channel_id);
+                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
                             }
                             hists.SetBinContentNormalizedLY(cube,  x_position, y_position, x_ly, y_ly);
                             hists.FillEventTime(xt->_time);
                             hists.FillEventTime(yt->_time);
                             hists.FillEventTime(zt->_time);
 
-                            hists.SetFiberLY_A(cube, xt->_chargePE_Amplitude_XTalk_with_background, yt->_chargePE_Amplitude_XTalk_with_background);
-                            hists.SetFiberLY_I(cube, xt->_chargePE_Integral_XTalk_with_background, yt->_chargePE_Integral_XTalk_with_background);
-                            hists.SetFiberLY_A_recon(cube, xt->_reconstructed_chargePE_Amplitude, yt->_reconstructed_chargePE_Amplitude);
+                            hists.SetFiberLY_A(cube, xt->_chargePE_Amplitude_XTalk, yt->_chargePE_Amplitude_XTalk);
+                            hists.SetFiberLY_I(cube, xt->_chargePE_Integral_XTalk, yt->_chargePE_Integral_XTalk);
+                            hists.SetFiberLY_A_recon(cube, xt->_chargePE_Amplitude, yt->_chargePE_Amplitude);
                             hists.FillFiberLY(xt->_channel_id, yt->_channel_id, x_ly, y_ly);
                             // hists.SetFiberLY_A_recon(cube,x_ly, y_ly);
                             hists.FillAveragePlots(x_position - x_min, y_position - y_min, x_ly, y_ly);
@@ -107,16 +102,16 @@ int main( int argc, char **argv ) {
                         }
                     }
                     if (x_position >= locationMap->at(GLOBAL_CUBE)._x_min &&  x_position < locationMap->at(GLOBAL_CUBE)._x_max && y_position >= locationMap->at(GLOBAL_CUBE)._y_min && y_position < locationMap->at(GLOBAL_CUBE)._y_max) {
-                        if (xt->_reconstructed_chargePE_Amplitude > 1 && yt->_reconstructed_chargePE_Amplitude > 1 && zt->_amplitude > 1 && xt->_quality < 100 && yt->_quality < 100) {
+                        if (xt->_chargePE_Amplitude > 1 && yt->_chargePE_Amplitude > 1 && zt->_amplitude > 1 && xt->_quality < 100 && yt->_quality < 100) {
                             // double x_ly = xt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).x_;
                             // double y_ly = yt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).y_;
-                            double x_ly = xt->_reconstructed_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
-                            double y_ly = yt->_reconstructed_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
+                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
+                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
                             if (xt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                x_ly = xt->_chargePE_Amplitude_XTalk_with_background / fibers_normalization->at(xt->_channel_id);
+                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
                             }
                             if (yt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                y_ly = yt->_chargePE_Amplitude_XTalk_with_background / fibers_normalization->at(yt->_channel_id);
+                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
                             }
                             // hists.SetBinContentNormalizedLY_layer(static_cast<unsigned int>(z_position),  x_position, y_position, x_ly, y_ly);
                             hists.SetFiberLY_layer( xt->_channel_id, yt->_channel_id, x_position, y_position, x_ly, y_ly);

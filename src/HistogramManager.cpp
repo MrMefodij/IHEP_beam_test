@@ -14,7 +14,7 @@
 #include <TKey.h>
 #include <TH1.h>
 
-HistogramManager::HistogramManager(unsigned int count){
+HistogramManager::HistogramManager(int count){
     histograms_.reserve(count);
     for (size_t i = 0; i < count; ++i) {
         std::string name = "Cube_location_" + std::to_string(i);
@@ -1292,7 +1292,7 @@ double LyHistogramManager::FillPixelData(std::vector<double>* data, TF1* fit, TH
     return result;
 }
 
-void LyHistogramManager::PreparePlotsForGeometry(TDirectory* dirName, const std::map<unsigned int,CubePosition>* locationMap) {
+void LyHistogramManager::PreparePlotsForGeometry(TDirectory* dirName, const std::map<int,CubePosition>* locationMap) {
     auto Geometry = dirName->mkdir("PlotsForGeometry");
     std::vector<CubeMapLY> x_avr;
     std::vector<CubeMapLY> y_avr;
@@ -1501,7 +1501,7 @@ void LyHistogramManager::PreparePlotsForGeometry(TDirectory* dirName, const std:
     x_LY_on_X_projection->Write();
     y_LY_on_Y_projection->Write();
 }
-void LyHistogramManager::PreparePlotsForMC(TDirectory* dirName, const std::map<unsigned int,CubePosition>* locationMap) {
+void LyHistogramManager::PreparePlotsForMC(TDirectory* dirName, const std::map<int,CubePosition>* locationMap) {
     auto MC = dirName->mkdir("PlotsForMC");
     std::vector<CubeMapLY> ly_summ_avr;
     std::vector<CubeMapLY> ly_x_avr;
