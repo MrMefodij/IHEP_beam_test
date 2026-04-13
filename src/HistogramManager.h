@@ -50,7 +50,8 @@ public:
     void SetFiberLY_A(unsigned int index, double x, double y);
     void SetFiberLY_A_recon(unsigned int index, double x, double y);
     void FillAveragePlots(double x, double y, double x_ly, double y_ly);
-    virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, unsigned int ch_z, double ly_x, double ly_y, double ly_z);
+    virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, double ly_x, double ly_y);
+//    virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, unsigned int ch_z, double ly_x, double ly_y, double ly_z);
     void PreparePlotsForMC(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
     void PreparePlotsForGeometry(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
 protected:

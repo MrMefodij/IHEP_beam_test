@@ -91,24 +91,25 @@ int main( int argc, char **argv ) {
                                                       yt->_chargePE_Amplitude);
                                 // double x_ly = xt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).x_;
                                 // double y_ly = yt->_reconstructed_chargePE_Amplitude / cubes_normalization->at(cube).y_;
-                                double x_ly = xt->_chargePE_Amplitude;
-                                double y_ly = yt->_chargePE_Amplitude;
-                                double z_ly = zt->_chargePE_Amplitude;
-//                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
-//                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
-//                            double z_ly = zt->_chargePE_Amplitude / (fibers_normalization->at(zt->_channel_id) * CHARGE_FIT_CONSTANT);
+//                                double x_ly = xt->_chargePE_Amplitude; // световыход без нормировки
+//                                double y_ly = yt->_chargePE_Amplitude;
+//                                double z_ly = zt->_chargePE_Amplitude;
+                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id));
+                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id));
+//                            double z_ly = zt->_chargePE_Amplitude / (fibers_normalization->at(zt->_channel_id));
                                 if (xt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                    x_ly = xt->_chargePE_Amplitude_XTalk;
-//                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
+//                                    x_ly = xt->_chargePE_Amplitude_XTalk;
+                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
                                 }
                                 if (yt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                    y_ly = yt->_chargePE_Amplitude_XTalk;
-//                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
+//                                    y_ly = yt->_chargePE_Amplitude_XTalk;
+                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
                                 }
 
-                                if (zt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                    z_ly = zt->_chargePE_Amplitude_XTalk;
-                                }
+//                                if (zt->_amplitude < AMPLITUDE_OVERFLOW) {
+//                                    z_ly = zt->_chargePE_Amplitude_XTalk;
+//                                    z_ly = zt->_chargePE_Amplitude_XTalk / fibers_normalization->at(zt->_channel_id);
+//                                }
                                 hists.SetBinContentNormalizedLY(cube, x_position, y_position, x_ly, y_ly);
                                 hists.FillEventTime(xt->_time);
                                 hists.FillEventTime(yt->_time);
@@ -117,7 +118,8 @@ int main( int argc, char **argv ) {
                                 hists.SetFiberLY_A(cube, xt->_chargePE_Amplitude_XTalk, yt->_chargePE_Amplitude_XTalk);
                                 hists.SetFiberLY_I(cube, xt->_chargePE_Integral_XTalk, yt->_chargePE_Integral_XTalk);
                                 hists.SetFiberLY_A_recon(cube, xt->_chargePE_Amplitude, yt->_chargePE_Amplitude);
-                                hists.FillFiberLY(xt->_channel_id, yt->_channel_id, zt->_channel_id, x_ly, y_ly, z_ly); // здесь не было заполнения Z
+                                hists.FillFiberLY(xt->_channel_id, yt->_channel_id, x_ly, y_ly);
+//                                hists.FillFiberLY(xt->_channel_id, yt->_channel_id, zt->_channel_id, x_ly, y_ly, z_ly); // с заполнением Z волокон
                                 // hists.SetFiberLY_A_recon(cube,x_ly, y_ly);
                                 hists.FillAveragePlots(x_position - x_min, y_position - y_min, x_ly, y_ly);
                                 hists.SetBinContentNormalizedLY_layer(static_cast<int>(z_position), x_position,
@@ -132,17 +134,19 @@ int main( int argc, char **argv ) {
                                 y_position < itGlobal->second._y_max) {
                                 if (xt->_chargePE_Amplitude > 1 && yt->_chargePE_Amplitude > 1 && zt->_amplitude > 1 &&
                                     xt->_quality < 100 && yt->_quality < 100) {
-                                    double x_ly = xt->_chargePE_Amplitude;
-                                    double y_ly = yt->_chargePE_Amplitude;
-//                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id) * CHARGE_FIT_CONSTANT);
-//                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id) * CHARGE_FIT_CONSTANT);
+//                                    double x_ly = xt->_chargePE_Amplitude; // без нормировки
+//                                    double y_ly = yt->_chargePE_Amplitude;
+                            double x_ly = xt->_chargePE_Amplitude / (fibers_normalization->at(xt->_channel_id));
+                            double y_ly = yt->_chargePE_Amplitude / (fibers_normalization->at(yt->_channel_id));
+//                            double z_ly = zt->_chargePE_Amplitude / (fibers_normalization->at(zt->_channel_id));
+
                                     if (xt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                        x_ly = xt->_chargePE_Amplitude_XTalk;
-//                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
+//                                        x_ly = xt->_chargePE_Amplitude_XTalk;
+                                x_ly = xt->_chargePE_Amplitude_XTalk / fibers_normalization->at(xt->_channel_id);
                                     }
                                     if (yt->_amplitude < AMPLITUDE_OVERFLOW) {
-                                        y_ly = yt->_chargePE_Amplitude_XTalk;
-//                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
+//                                        y_ly = yt->_chargePE_Amplitude_XTalk;
+                                y_ly = yt->_chargePE_Amplitude_XTalk / fibers_normalization->at(yt->_channel_id);
                                     }
                                     // hists.SetBinContentNormalizedLY_layer(static_cast<unsigned int>(z_position),  x_position, y_position, x_ly, y_ly);
                                     hists.SetFiberLY_layer(xt->_channel_id, yt->_channel_id, x_position, y_position,

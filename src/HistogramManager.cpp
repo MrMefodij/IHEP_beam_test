@@ -678,10 +678,11 @@ void LyHistogramManager::SetFiberLY_A_recon(unsigned int index, double x, double
     y_CubeLY_A_recon[index]->Fill(y);
 }
 
-void LyHistogramManager::FillFiberLY(const unsigned int ch_x, const unsigned int ch_y, const unsigned int ch_z, const double ly_x, const double ly_y, const double ly_z) {
+void LyHistogramManager::FillFiberLY(const unsigned int ch_x, const unsigned int ch_y, const double ly_x, const double ly_y) {
+//void LyHistogramManager::FillFiberLY(const unsigned int ch_x, const unsigned int ch_y, const unsigned int ch_z, const double ly_x, const double ly_y, const double ly_z) { // для z волокон
     fiberLY_[ch_x]->Fill(ly_x);
     fiberLY_[ch_y]->Fill(ly_y);
-    fiberLY_[ch_z]->Fill(ly_z);
+//    fiberLY_[ch_z]->Fill(ly_z);
 }
 
 void LyHistogramManager::FillEventTime(double value){
