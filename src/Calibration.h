@@ -20,25 +20,25 @@ struct CalibResults{
 
 class Calibration {
 public:
-    explicit Calibration(const std::string& inFileName, const unsigned int verbose=0);
+    explicit Calibration(const std::string& inFileName, const int verbose=0);
     bool InitCalibByTXT_I();
     bool InitCalibByTXT_A();
     bool InitChannelFlagByTXT();
-    const std::map<unsigned int, CalibResults>* GetCalibResultsI() const;
-    const std::map<unsigned int, CalibResults>* GetCalibResultsA() const;
-    const std::map<unsigned int, bool>* GetChannelFlag() const;
+    const std::map<int, CalibResults>* GetCalibResultsI() const;
+    const std::map<int, CalibResults>* GetCalibResultsA() const;
+    const std::map<int, bool>* GetChannelFlag() const;
 
 private:
     const std::string inFileName_;
-    const unsigned int verbose_;
+    const int verbose_;
     std::string calibrationFileNameI_;
     std::string calibrationFileNameA_;
     bool calibration_I_Exist_;
     bool calibration_A_Exist_;
     bool channelFlag_Exist_;
-    std::map<unsigned int, CalibResults> calibrationResultsI_;
-    std::map<unsigned int, CalibResults> calibrationResultsA_;
-    std::map<unsigned int, bool> channelFlag_;
+    std::map<int, CalibResults> calibrationResultsI_;
+    std::map<int, CalibResults> calibrationResultsA_;
+    std::map<int, bool> channelFlag_;
 };
 
 

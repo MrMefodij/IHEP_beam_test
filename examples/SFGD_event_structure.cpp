@@ -20,12 +20,18 @@ int main( int argc, char **argv ) {
     std::shared_ptr<TFile> rFile = fileOut.GetOutputFilePointer();
 
     PNPI::TreeStructure* hits = fileInput.getTreeStructure();
-    std::set<unsigned int>* availableChannels = fileInput.GetChannels();
+
+    if (!hits) {
+        std::cerr << "Error: TreeStructure is null!" << std::endl;
+        return 1;
+    }
+
+    std::set<int>* availableChannels = fileInput.GetChannels();
 
     for (int i = 0; i < fileInput.GetEntries(); ++i) {
         fileInput.GetNextEntry(i);
         PrototypeHit events = PNPI::GetHitStructure(hits,availableChannels, &calibration);
-        if (events._quality>=0 &&  events._quality<=20) {
+        if (events._quality>=0 && events._quality<=20) {
             fileOut.FillTree(events);
         }
     }

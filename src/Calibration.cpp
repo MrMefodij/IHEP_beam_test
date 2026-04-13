@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream>
 
-Calibration::Calibration(const std::string& inFileName, const unsigned int verbose) : inFileName_(inFileName), verbose_(verbose){
+Calibration::Calibration(const std::string& inFileName, const int verbose) : inFileName_(inFileName), verbose_(verbose){
     size_t pos = inFileName.rfind('.');
     if (pos != std::string::npos) {
         calibrationFileNameI_ = inFileName_.substr(0, pos) + "_Calibration_I.txt";
@@ -36,7 +36,7 @@ bool Calibration::InitCalibByTXT_I() {
     std::string header;
     std::getline(map, header);
     while (!map.eof()){
-        unsigned int ch;
+        int ch;
         map >> ch;
         if(std::floor(ch) == ch){
             map >> calibrationResultsI_[ch]._gain >> calibrationResultsI_[ch]._gain_error >> calibrationResultsI_[ch]._peak0 >>
@@ -60,9 +60,10 @@ bool Calibration::InitCalibByTXT_A(){
     std::string header;
     std::getline(map, header);
     while (!map.eof()){
-        unsigned int ch;
+        int ch;
         map >> ch;
         if(std::floor(ch) == ch){
+            calibrationResultsA_[ch]._mean =1; calibrationResultsA_[ch]._xTalk=1;
             map >> calibrationResultsA_[ch]._gain >> calibrationResultsA_[ch]._gain_error >> calibrationResultsA_[ch]._peak0 >>
             calibrationResultsA_[ch]._peak0_error >> calibrationResultsA_[ch]._mean >> calibrationResultsA_[ch]._xTalk;
             if (verbose_){
@@ -84,7 +85,7 @@ bool Calibration::InitChannelFlagByTXT() {
     std::string header;
     std::getline(flag, header);
     while (!flag.eof()) {
-        unsigned int ch;
+        int ch;
         flag >> ch;
         if(std::floor(ch) == ch) {
             flag >> channelFlag_[ch];
@@ -97,19 +98,19 @@ bool Calibration::InitChannelFlagByTXT() {
     return channelFlag_Exist_;
 }
 
-const std::map<unsigned int,CalibResults>* Calibration::GetCalibResultsI() const{
+const std::map<int,CalibResults>* Calibration::GetCalibResultsI() const{
     if (calibration_I_Exist_)
         return &calibrationResultsI_;
     return nullptr;
 }
 
-const std::map<unsigned int,CalibResults>* Calibration::GetCalibResultsA() const{
+const std::map<int,CalibResults>* Calibration::GetCalibResultsA() const{
     if (calibration_A_Exist_)
         return &calibrationResultsA_;
     return nullptr;
 }
 
-const std::map<unsigned int, bool>* Calibration::GetChannelFlag() const {
+const std::map<int, bool>* Calibration::GetChannelFlag() const {
     if (channelFlag_Exist_)
         return &channelFlag_;
     return nullptr;

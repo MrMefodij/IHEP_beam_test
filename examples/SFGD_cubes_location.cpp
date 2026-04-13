@@ -40,25 +40,16 @@ int main( int argc, char **argv ) {
         PrototypeHit *hit = files.getHitPointer();
 
         for (int i = 0; i < files.GetEntries(); ++i) {
-            if (!channels_map || !fibers_s_normalization) {
-                std::cerr << "Error: Nullptr!" << std::endl;
-                return 1;
-            }
             files.GetNextEntry(i);
-
             if (!hit) continue;
 
-            for (int j = 0; j < CUBES_COUNT; ++j) {
-                double layerLy[LAYERS_COUNT] = {0};
-                double layerQuality[LAYERS_COUNT] = {0};
-
-                for (const auto & itHit : hit->_channelsData) {
-                    if (channels_map->count(itHit._channel_id)) {
-
-                        double norm_val = 1.0;
-                        if (fibers_s_normalization && fibers_s_normalization->count(itHit._channel_id)) {
-                            norm_val = fibers_s_normalization->at(itHit._channel_id);
-                        }
+            double layerLy[LAYERS_COUNT] = {0};
+            for (const auto &itHit: hit->_channelsData) {
+                if (channels_map->count(itHit._channel_id)) {
+                    double norm_val = 1.0;
+                    auto it_norm = fibers_s_normalization->find(itHit._channel_id);
+                    if (it_norm != fibers_s_normalization->end()) norm_val = it_norm->second;
+                    if (norm_val <= 0) norm_val = 1.0;
 
                         if (norm_val == 0) norm_val = 1.0;
 
@@ -72,53 +63,54 @@ int main( int argc, char **argv ) {
                     }
                 }
 
-                for (int layer = 0; layer < LAYERS_COUNT; ++layer) {
-                    double x_position = hit->_Ax * (CUBES_POSITION - 1 + layer)  + hit->_Bx;
-                    double y_position = hit->_Ay * (CUBES_POSITION - 1 + layer) + hit->_By;
-                    if (layerQuality[layer] < 100) {
-                        hists.SetBinContentNormalizedLY_layer(layer,  x_position, y_position, layerLy[layer], 0);
-                        hists.SetFiberLY_layer(layer, layer, x_position, y_position, layerLy[layer], layerLy[layer]);
-                    }
-                }
+            for (int layer = 0; layer < LAYERS_COUNT; ++layer) {
+                double x_pos = hit->_Ax * (CUBES_POSITION - 1 + layer) + hit->_Bx;
+                double y_pos = hit->_Ay * (CUBES_POSITION - 1 + layer) + hit->_By;
 
-                auto it = map->find(j);
-                if (it == map->end()) continue;
-                int x = static_cast<int>(it->second._x);
-                int y = static_cast<int>(it->second._y);
-                int z = static_cast<int>(it->second._z);
+                // Попытка убрать точку (0,0), видимо, что-то не прошло инцилизацию
+                if (hit->_Ax == 0 && hit->_Ay == 0) continue;
 
-                if (x < 0 || y < 0 || z < 0) continue;
-                if (channels_map->find(x) == channels_map->end() ||
-                    channels_map->find(y) == channels_map->end() ||
-                    channels_map->find(z) == channels_map->end()) {
-                    continue;
-                }
+                hists.SetBinContentNormalizedLY_layer(layer, x_pos, y_pos, layerLy[layer], 0);
+                hists.SetFiberLY_layer(layer, layer, x_pos, y_pos, layerLy[layer], layerLy[layer]);
+            }
 
-                double z_position = channels_map->at(x)._cube_z;
+            for (int j = 0; j < CUBES_COUNT; ++j) {
+                auto it_cube = map->find(j);
+                if (it_cube == map->end()) continue;
 
-                auto xt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitX) {
-                    return hitX._channel_id == x;
-                });
-                auto yt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitY) {
-                    return hitY._channel_id == y;
-                });
-                auto zt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitZ) {
-                    return hitZ._channel_id == z;
-                });
+                int x_id = it_cube->second._x;
+                int y_id = it_cube->second._y;
+                int z_id = it_cube->second._z;
+
+                auto xt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(),
+                                       [&](const auto &h) { return h._channel_id == x_id; });
+                auto yt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(),
+                                       [&](const auto &h) { return h._channel_id == y_id; });
+                auto zt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(),
+                                       [&](const auto &h) { return h._channel_id == z_id; });
+
                 if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() &&
                     zt != hit->_channelsData.end()) {
-                    if (xt->_amplitude > 5 && yt->_amplitude > 5 && zt->_amplitude > 15) {
-                        double x_position = hit->_Ax * (CUBES_POSITION - 1 + z_position)  + hit->_Bx;
-                        double y_position = hit->_Ay * (CUBES_POSITION - 1 + z_position) + hit->_By;
-                        hists.fillHistograms(j, x_position, y_position);
+//                    if (xt->_amplitude > 80 && yt->_amplitude > 80 && zt->_amplitude > 80) { // кат на порог в каналах ADC
+                    if (xt->_chargePE_Amplitude > 8 && yt->_chargePE_Amplitude > 8 && zt->_chargePE_Amplitude > 8) { // кат на порог в PE
+                        double z_pos_geom = channels_map->at(x_id)._cube_z;
+                        double x_p = hit->_Ax * (CUBES_POSITION - 1 + z_pos_geom) + hit->_Bx;
+                        double y_p = hit->_Ay * (CUBES_POSITION - 1 + z_pos_geom) + hit->_By;
+
+                        if (hit->_Ax == 0 && hit->_Ay == 0) continue;
+
+                        hists.fillHistograms(j, x_p, y_p);
+
                     }
                 }
             }
         }
     }
-    hists.WriteHistograms(out.get());
+//    hists.WriteHistograms(out.get());
     std::ofstream fileOut(CUBES_BOUNDARIES_MAP);
-    int threshold = 70;
-    hists.FindHighDensityArea(threshold, fileOut);
+//    int threshold = 70;
+//    hists.FindHighDensityArea(threshold, fileOut);
+    hists.FindHighDensityArea(900, fileOut); // кат на количество вхождений в гистограмму
+    hists.WriteHistograms(out.get());
     return 0;
 }

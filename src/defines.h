@@ -23,7 +23,7 @@
 #define GAUS_FIBER_BINNING 200, 0, 100 //?
 #define GAUS_BINNING 85, 0, 170 //?
 #define XTALK_BINNING 2*100*2.5, 0, 1
-#define CUBES_POSITION 375 //? расстояние от камеры до прототипа
+#define CUBES_POSITION 375 //? расстояние от камеры до прототипа //
 #define FIBRE_NOIZE 5000, 0, 200
 #define CHANNELS_FLAG "../calibration/channel_flag.txt"
 #define CUBES_NORMALIZATION "../calibration/cubes_normalization.txt"

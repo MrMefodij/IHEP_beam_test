@@ -34,8 +34,8 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
         }
         outFile <<"ch gain gain_error peak_1 peak_1_error mean_w/_background x-talk_w/_background mean_w/o_background x-talk_w/o_background\n";
 
-        std::map<uint , PNPI::WaveFormParamStruct>* hits = fileInput->getSelfTreeStructure();
-        std::set<unsigned int>* availableChannels = fileInput->GetChannels();
+        std::map<int , PNPI::WaveFormParamStruct>* hits = fileInput->getSelfTreeStructure();
+        std::set<int>* availableChannels = fileInput->GetChannels();
 
         TSpectrum *fTSpectrum = new TSpectrum(60);
         TF1 *f1 = new TF1("Linear fit", "[0]*x+[1]");
@@ -135,8 +135,7 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
                     x_talk_results = 1;
                 }
                 outFile << ch << " " << f1->GetParameter(0) << " "<<  f1->GetParError(0) <<" "<< pedestal<< " "<< pedestalError << " " <<
-                    mean_w_background << " " << x_talk_results << " " <<
-                    hFEBCH->GetMean() << " " << (hFEBCH->GetMean() - (pedestal -  f1->GetParameter(0)))/ f1->GetParameter(0) << "\n";
+                    mean_w_background << " " << x_talk_results << "\n";
                 gain.Fill(f1->GetParameter(0));
                 x_talk.Fill((x_talk_results) *100 - 100);
 

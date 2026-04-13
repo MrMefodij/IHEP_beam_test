@@ -35,10 +35,10 @@ namespace PNPI {
 
     struct TreeStructure{
         TrackParamStruct _trackParam;
-        std::map<unsigned int,WaveFormParamStruct> _sipmData;
+        std::map<int,WaveFormParamStruct> _sipmData;
     };
 
-    PrototypeHit GetHitStructure(const TreeStructure* entry, const std::set<unsigned int>* availableChannels_, const Calibration* calibration = nullptr);
+    PrototypeHit GetHitStructure(const TreeStructure* entry, const std::set<int>* availableChannels_, const Calibration* calibration = nullptr);
 
     class PnpiRootFile{
     public:
@@ -47,23 +47,23 @@ namespace PNPI {
         void Init();
 
         TreeStructure* getTreeStructure();
-        std::map<unsigned int,WaveFormParamStruct>* getSelfTreeStructure();
-        std::set<unsigned int>* GetChannels();
-        unsigned int GetEntries() const;
+        std::map<int,WaveFormParamStruct>* getSelfTreeStructure();
+        std::set<int>* GetChannels();
+        int GetEntries() const;
         uint GetSelfEntry(const uint ch);
-        void GetNextEntry(unsigned int i);
+        void GetNextEntry(int i);
         void GetNextEntry(uint i, uint ch);
 
     private:
         const std::string fileName_;
         TTree * allEvents_;
         TFile * fileInput_;
-        std::set<unsigned int> availableChannels_;
+        std::set<int> availableChannels_;
         TreeStructure entry_;
 
-        std::map<uint, TTree *> allEventsSelfTrig_;
-        std::map<uint ,WaveFormParamStruct> sipmDataTrig_;
-        unsigned int entries_;
+        std::map<int, TTree *> allEventsSelfTrig_;
+        std::map<int ,WaveFormParamStruct> sipmDataTrig_;
+        int entries_;
     };
 }
 

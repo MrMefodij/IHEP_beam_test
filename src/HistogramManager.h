@@ -24,7 +24,7 @@ public:
     void SetBinContent(unsigned int  index, double x, double y, double value);
     void SetTitlesHist(const std::string& titleX, const std::string& titleY, const std::string& titleZ);
     virtual void WriteHistograms(TDirectory* dirName);
-    void FindHighDensityArea(int threshold, std::ofstream& fileOut);
+    void FindHighDensityArea(int minEntries, std::ofstream& fileOut);
 protected:
     std::vector<std::unique_ptr<TH2F>> histograms_;
 };
@@ -50,7 +50,7 @@ public:
     void SetFiberLY_A(unsigned int index, double x, double y);
     void SetFiberLY_A_recon(unsigned int index, double x, double y);
     void FillAveragePlots(double x, double y, double x_ly, double y_ly);
-    virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, double ly_x, double ly_y);
+    virtual void FillFiberLY(unsigned int ch_x, unsigned int ch_y, unsigned int ch_z, double ly_x, double ly_y, double ly_z);
     void PreparePlotsForMC(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
     void PreparePlotsForGeometry(TDirectory* dirName, const std::map<int,CubePosition>* locationMap);
 protected:

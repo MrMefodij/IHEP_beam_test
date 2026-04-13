@@ -8,27 +8,41 @@
 #include <TKey.h>
 
 namespace PNPI{
-    PrototypeHit GetHitStructure (const TreeStructure* entry, const std::set<unsigned int>* availableChannels,const Calibration* calibration){
+    PrototypeHit GetHitStructure (const TreeStructure* entry, const std::set<int>* availableChannels,const Calibration* calibration) {
         PrototypeHit result;
-        const std::map<unsigned int,CalibResults>* calibrationResultsI = calibration->GetCalibResultsI();
-        const std::map<unsigned int,CalibResults>* calibrationResultsA = calibration->GetCalibResultsA();
-        const std::map<unsigned int, bool>* channelsFlag = calibration->GetChannelFlag();
-        result._quality = (int)entry->_trackParam.Q;
+
+        if (!entry || !availableChannels || !calibration) {
+            std::cerr << "ERROR: One of the pointers is NULL in GetHitStructure!" << std::endl;
+            return result;
+        }
+
+        const std::map<int, CalibResults> *calibrationResultsI = calibration->GetCalibResultsI();
+        const std::map<int, CalibResults> *calibrationResultsA = calibration->GetCalibResultsA();
+        const std::map<int, bool> *channelsFlag = calibration->GetChannelFlag();
+        result._quality = (int) entry->_trackParam.Q;
         result._x = entry->_trackParam.AX * CUBES_POSITION + entry->_trackParam.BX;
-        result._y = entry->_trackParam.AY * CUBES_POSITION + entry->_trackParam.BY; //cube position 1450 +/- 1 cm (1485) was 1450 become 1485
+        result._y = entry->_trackParam.AY * CUBES_POSITION +
+                    entry->_trackParam.BY; //cube position 1450 +/- 1 cm (1485) was 1450 become 1485
 
         result._Ax = entry->_trackParam.AX;
         result._Bx = entry->_trackParam.BX;
         result._Ay = entry->_trackParam.AY;
         result._By = entry->_trackParam.BY;
 
-        for (const auto ch : *availableChannels) {
-            if (entry->_sipmData.at(ch).A > 0){
+        for (const auto ch: *availableChannels) {
+            if (entry->_sipmData.count(ch) == 0) continue;
+            if (ch == -1) continue;
+
+            if (entry->_sipmData.at(ch).A > 0) {
                 ChannelData hit;
-                if (channelsFlag != nullptr) {
+
+                if (channelsFlag != nullptr && channelsFlag->count(ch)) {
                     hit._channels_flag = channelsFlag->at(ch);
+                } else {
+                    hit._channels_flag = false;
                 }
-                hit._channel_id = ch ;
+
+                hit._channel_id = ch;
                 hit._quality = entry->_sipmData.at(ch).Q;
                 hit._amplitude = entry->_sipmData.at(ch).A;
                 hit._time = entry->_sipmData.at(ch).T;
@@ -37,11 +51,18 @@ namespace PNPI{
                 if (calibrationResultsI != nullptr){
                     hit._chargePE_Integral = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / calibrationResultsI->at(ch)._gain + 1;
                     hit._chargePE_Integral_XTalk = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / (calibrationResultsI->at(ch)._gain * calibrationResultsI->at(ch)._xTalk) + 1;
+                } else {
+                    std::cerr << "Сhannel ID: " << ch << "Нет калибровки I " << ch << std::endl;
+                    hit._chargePE_Integral = 0;
                 }
                 if (calibrationResultsA != nullptr){
                     hit._chargePE_Amplitude = (entry->_sipmData.at(ch).A - calibrationResultsA->at(ch)._peak0) / calibrationResultsA->at(ch)._gain + 1;
                     hit._chargePE_Amplitude_XTalk = (entry->_sipmData.at(ch).A - calibrationResultsA->at(ch)._peak0) / (calibrationResultsA->at(ch)._gain * calibrationResultsA->at(ch)._xTalk) + 1;
+                } else {
+                    std::cerr << "Сhannel ID: " << ch << "Нет калибровки A " << ch << std::endl;
+                    hit._chargePE_Integral = 0;
                 }
+
                 result._channelsData.push_back(hit);
             }
         }
@@ -74,7 +95,7 @@ namespace PNPI{
 
                 std::ostringstream sChNum;
                 std::string sCh;
-                for (unsigned int ih = 0; ih <= CHANNELS_NUMBER; ++ih) {
+                for (int ih = 0; ih <= CHANNELS_NUMBER; ++ih) {
                     sChNum.str("");
                     sChNum << std::setw(2) << std::setfill('0') << ih;
                     sCh = "SiPM_55_" + sChNum.str();
@@ -104,15 +125,15 @@ namespace PNPI{
         return &entry_;
     }
 
-    std::map<unsigned int,WaveFormParamStruct>* PnpiRootFile::getSelfTreeStructure(){
+    std::map<int,WaveFormParamStruct>* PnpiRootFile::getSelfTreeStructure(){
         return &sipmDataTrig_;
     }
 
-    std::set<unsigned int>* PnpiRootFile::GetChannels(){
+    std::set<int>* PnpiRootFile::GetChannels(){
         return &availableChannels_;
     };
 
-    unsigned int PnpiRootFile::GetEntries() const{
+    int PnpiRootFile::GetEntries() const{
         return entries_;
     }
 
@@ -126,7 +147,7 @@ namespace PNPI{
         return 0.0;
     }
 
-    void PnpiRootFile::GetNextEntry(unsigned int i){
+    void PnpiRootFile::GetNextEntry(int i){
         if (i <= entries_) {
             allEvents_->GetEntry(i);
         } else {
