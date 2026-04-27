@@ -63,7 +63,7 @@ bool Calibration::InitCalibByTXT_A(){
         int ch;
         map >> ch;
         if(std::floor(ch) == ch){
-            calibrationResultsA_[ch]._mean =1; calibrationResultsA_[ch]._xTalk=1;
+            calibrationResultsA_[ch]._mean = 1; calibrationResultsA_[ch]._xTalk = 1;
             map >> calibrationResultsA_[ch]._gain >> calibrationResultsA_[ch]._gain_error >> calibrationResultsA_[ch]._peak0 >>
             calibrationResultsA_[ch]._peak0_error >> calibrationResultsA_[ch]._mean >> calibrationResultsA_[ch]._xTalk;
             if (verbose_){

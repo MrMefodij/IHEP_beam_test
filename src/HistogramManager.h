@@ -127,4 +127,38 @@ protected:
     static double FillPixelProjectionYData(TDirectory* dirName, const std::vector<double> (&pixels)[LAYERS_COUNT][CUBES_SLICE_X][CUBES_SLICE_Y], TF1* fit, TH1F* hist, const char* title, int x_, int binX_min, int binX_max, int y_, int binY_min, int binY_max, int layer, double cut);
 };
 
+class XTalkHistogramManager : public HistogramManager {
+public:
+    explicit XTalkHistogramManager(unsigned int count = CUBES_COUNT);
+    void SetTitlesHistXTalk_N(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk_1D(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk_1D_all(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk_2D(const std::string& titleX, const std::string& titleY, const std::string& titleZ);
+    void SetBinContentXTalk_x(unsigned int index, double x, double y, double x_value, double y_value);
+    void SetBinContentXTalk_y(unsigned int index, double x, double y, double x_value, double y_value);
+    void WriteHistograms(TDirectory* dirName) override;
+
+private:
+    std::vector<std::unique_ptr<TH1F>> histogramsXTalkN_;
+    std::vector<std::unique_ptr<TH1F>> x_histogramsXTalkN_;
+    std::vector<std::unique_ptr<TH1F>> y_histogramsXTalkN_;
+
+    std::vector<std::unique_ptr<TH1F>> x_histogramsXTalk_;
+    std::vector<std::unique_ptr<TH1F>> y_histogramsXTalk_;
+
+    std::vector<std::unique_ptr<TH2F>> histogramsXTalk_2D_;
+    std::vector<std::unique_ptr<TH2F>> x_histogramsXTalk_2D_;
+    std::vector<std::unique_ptr<TH2F>> y_histogramsXTalk_2D_;
+
+    std::unique_ptr<TH1F> averageXTalk_;
+    std::unique_ptr<TH1F> averageXTalk_x_;
+    std::unique_ptr<TH1F> averageXTalk_y_;
+
+    std::vector<std::vector<std::vector<std::vector<double>>>> pixelsDataXLY_cube_;
+    std::vector<std::vector<std::vector<std::vector<double>>>> pixelsDataYLY_cube_;
+
+    std::vector<std::unique_ptr<TH2F>> x_histogramsLY_gaus_cube_;
+    std::vector<std::unique_ptr<TH2F>> y_histogramsLY_gaus_cube_;
+
+};
 #endif //CUBESLY_HISTOGRAMMANAGER_H

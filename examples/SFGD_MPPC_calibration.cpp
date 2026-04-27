@@ -137,7 +137,7 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
                 outFile << ch << " " << f1->GetParameter(0) << " "<<  f1->GetParError(0) <<" "<< pedestal<< " "<< pedestalError << " " <<
                     mean_w_background << " " << x_talk_results << "\n";
                 gain.Fill(f1->GetParameter(0));
-                x_talk.Fill((x_talk_results) *100 - 100);
+                x_talk.Fill((x_talk_results) * 100 - 100);
 
                 gr->SetTitle(("Fit: Channel_"+ std::to_string(ch)).c_str());
                 gr->SetName(("Fit: Channel_"+ std::to_string(ch)).c_str());

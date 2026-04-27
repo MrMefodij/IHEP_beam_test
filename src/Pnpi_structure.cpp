@@ -50,16 +50,16 @@ namespace PNPI{
 
                 if (calibrationResultsI != nullptr){
                     hit._chargePE_Integral = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / calibrationResultsI->at(ch)._gain + 1;
-                    hit._chargePE_Integral_XTalk = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / (calibrationResultsI->at(ch)._gain * calibrationResultsI->at(ch)._xTalk) + 1;
+//                    hit._chargePE_Integral_XTalk = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / (calibrationResultsI->at(ch)._gain * calibrationResultsI->at(ch)._xTalk) + 1;
                 } else {
-                    std::cerr << "Сhannel ID: " << ch << "Нет калибровки I " << ch << std::endl;
+                    std::cerr << "Сhannel ID: " << ch << " Нет калибровки I " << ch << std::endl;
                     hit._chargePE_Integral = 0;
                 }
                 if (calibrationResultsA != nullptr){
                     hit._chargePE_Amplitude = (entry->_sipmData.at(ch).A - calibrationResultsA->at(ch)._peak0) / calibrationResultsA->at(ch)._gain + 1;
-                    hit._chargePE_Amplitude_XTalk = (entry->_sipmData.at(ch).A - calibrationResultsA->at(ch)._peak0) / (calibrationResultsA->at(ch)._gain * calibrationResultsA->at(ch)._xTalk) + 1;
+//                    hit._chargePE_Amplitude_XTalk = (entry->_sipmData.at(ch).A - calibrationResultsA->at(ch)._peak0) / (calibrationResultsA->at(ch)._gain * calibrationResultsA->at(ch)._xTalk) + 1;
                 } else {
-                    std::cerr << "Сhannel ID: " << ch << "Нет калибровки A " << ch << std::endl;
+                    std::cerr << "Сhannel ID: " << ch << " Нет калибровки A " << ch << std::endl;
                     hit._chargePE_Integral = 0;
                 }
 
