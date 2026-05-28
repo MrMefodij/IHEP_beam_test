@@ -118,6 +118,10 @@ protected:
     std::unique_ptr<TH2F> x_histogramsAverageLY_gaus_layer_;
     std::unique_ptr<TH2F> y_histogramsAverageLY_gaus_layer_;
 
+//    std::unique_ptr<TH1F> pixelsAverageLY_X_Y_;
+    std::unique_ptr<TH1F> pixelsAverageLY_X_; // 1D
+    std::unique_ptr<TH1F> pixelsAverageLY_Y_;
+
     void NormalizeCubes() const;
     void NormalizeFibers() const;
     static void FillPixelData(TDirectory* dir, std::vector<double>* data, TF1* fit, TH2F* hist, const char* title, int x, int y, double cut);
@@ -125,6 +129,10 @@ protected:
     static void FillPixelFiberData(TDirectory* dir, std::vector<double>* data, TH1F* hist, TH1F* histAvr, TH1F* histCompr, const char* title, int position);
     static double FillPixelProjectionXData(TDirectory* dirName, const std::vector<double> (&pixels)[LAYERS_COUNT][CUBES_SLICE_X][CUBES_SLICE_Y], TF1* fit, TH1F* hist, const char* title, int x_, int binX_min, int binX_max, int y_, int binY_min, int binY_max, int layer, double cut);
     static double FillPixelProjectionYData(TDirectory* dirName, const std::vector<double> (&pixels)[LAYERS_COUNT][CUBES_SLICE_X][CUBES_SLICE_Y], TF1* fit, TH1F* hist, const char* title, int x_, int binX_min, int binX_max, int y_, int binY_min, int binY_max, int layer, double cut);
+
+    static void FillPixelAverageData_X(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut); // 1D
+    static void FillPixelAverageData_Y(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut);
+    static void FillPixelAverageData_X_Y(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut);
 };
 
 class XTalkHistogramManager : public HistogramManager {
@@ -161,4 +169,70 @@ private:
     std::vector<std::unique_ptr<TH2F>> y_histogramsLY_gaus_cube_;
 
 };
+
+class XTalk4sideHistogramManager : public HistogramManager {
+public:
+    explicit XTalk4sideHistogramManager(unsigned int count = CUBES_COUNT);
+    void SetTitlesHistXTalk4side_1D(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk4side_1D_2(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk4side_1D_3(const std::string& titleX, const std::string& titleY);
+    void SetTitlesHistXTalk4side_2D(const std::string& titleX, const std::string& titleY, const std::string& titleZ);
+    void SetBinContentXTalk4side_up(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_down(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_right(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_left(double x, double y,double value_XTalk, double value_LY_XTalk, double value_LY);
+    void WriteHistograms(TDirectory* dirName) override;
+
+    const std::unique_ptr<TH1F>& getDistLYUp() const {
+        return dist_LY_up_;
+    }
+
+    const std::unique_ptr<TH1F>& getDistLYDown() const {
+        return dist_LY_down_;
+    }
+
+    const std::unique_ptr<TH1F>& getDistLYRight() const {
+        return dist_LY_right_;
+    }
+
+    const std::unique_ptr<TH1F>& getDistLYLeft() const {
+        return dist_LY_left_;
+    }
+
+private:
+    std::unique_ptr<TH2F> histogramsXTalk_2D_up_;
+    std::unique_ptr<TH2F> histogramsXTalk_2D_down_;
+    std::unique_ptr<TH2F> histogramsXTalk_2D_right_;
+    std::unique_ptr<TH2F> histogramsXTalk_2D_left_;
+
+    std::unique_ptr<TH1F> averageXTalk_up_;
+    std::unique_ptr<TH1F> averageXTalk_down_;
+    std::unique_ptr<TH1F> averageXTalk_right_;
+    std::unique_ptr<TH1F> averageXTalk_left_;
+
+    std::unique_ptr<TH1F> dist_LY_XTalk_up_;
+    std::unique_ptr<TH1F> dist_LY_XTalk_down_;
+    std::unique_ptr<TH1F> dist_LY_XTalk_right_;
+    std::unique_ptr<TH1F> dist_LY_XTalk_left_;
+
+    std::unique_ptr<TH1F> dist_LY_up_;
+    std::unique_ptr<TH1F> dist_LY_down_;
+    std::unique_ptr<TH1F> dist_LY_right_;
+    std::unique_ptr<TH1F> dist_LY_left_;
+
+    std::vector<double> pixelsData_up_LY_cube_[CUBES_SLICE_X][CUBES_SLICE_Y];
+    std::vector<double> pixelsData_down_LY_cube_[CUBES_SLICE_X][CUBES_SLICE_Y];
+    std::vector<double> pixelsData_right_LY_cube_[CUBES_SLICE_X][CUBES_SLICE_Y];
+    std::vector<double> pixelsData_left_LY_cube_[CUBES_SLICE_X][CUBES_SLICE_Y];
+
+    std::unique_ptr<TH1F> pixelsAverageXTalk_up_;
+    std::unique_ptr<TH1F> pixelsAverageXTalk_down_;
+    std::unique_ptr<TH1F> pixelsAverageXTalk_right_;
+    std::unique_ptr<TH1F> pixelsAverageXTalk_left_;
+
+    static void FillPixelData(TDirectory* dir, std::vector<double>* data, TH2F* hist, const char* title, int x, int y, double cut);
+    static void FillPixelAverageData_Left_Right(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut);
+    static void FillPixelAverageData_UP_Down(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut);
+};
+
 #endif //CUBESLY_HISTOGRAMMANAGER_H
