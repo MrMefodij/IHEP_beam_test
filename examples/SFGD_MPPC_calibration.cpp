@@ -35,6 +35,7 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
         outFile <<"ch gain gain_error peak_1 peak_1_error mean_w/_background x-talk_w/_background mean_w/o_background x-talk_w/o_background\n";
 
         std::map<int , PNPI::WaveFormParamStruct>* hits = fileInput->getSelfTreeStructure();
+        std::map<int , PNPI::WaveFormParamStruct>* hits_beam = fileInput->getBeamTreeStructure();
         std::set<int>* availableChannels = fileInput->GetChannels();
 
         TSpectrum *fTSpectrum = new TSpectrum(60);
@@ -47,38 +48,69 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
         for (auto  ch : *availableChannels) {
             std::string sCh = "Channel_" + std::to_string(ch);
             auto entry = fileInput->GetSelfEntry(ch);
+            if (fileInput->GetSelfEntry(ch) == 0){ continue;}
+            std::cout << "Getting channel " << ch << " with " << entry << " number of enters." << std::endl;
             TH1I * hFEBCH;
+            TH1I * hCH_xtalk;
             if (charge == 'A') {
-                hFEBCH = new TH1I("","", 70,0,70);
+                hFEBCH = new TH1I("hFEBCH","hFEBCH", 70,0,70);
+                hCH_xtalk = new TH1I("hCH_xtalk","hCH_xtalk", 700,0,700);
             } else {
-                hFEBCH = new TH1I("","", 300,0,600);
+                hFEBCH = new TH1I("hFEBCH","hFEBCH", 300,0,600);
+                hCH_xtalk = new TH1I("hCH_xtalk","hCH_xtalk", 300,0,600);
             }
 
             TGraphErrors *gr = new TGraphErrors;
             for (int i = 0; i < entry; ++i) {
                 fileInput->GetNextEntry(i, ch);
-                if (hits->at(ch).Q < 2) {
-                    if (charge == 'A') {
-                        hFEBCH->Fill(hits->at(ch).A);
-                    } else {
-                        hFEBCH->Fill(hits->at(ch).I);
+                if  (hits->at(ch).Q < 1000) {
+                    if (hits->at(ch).A > 5) {
+                        if (charge == 'A') {
+                            hFEBCH->Fill(hits->at(ch).A);
+                        } else {
+                            hFEBCH->Fill(hits->at(ch).I);
+                        }
+                        if (hits->at(ch).Q <= 2) {
+                            if (charge == 'A') {
+                                hCH_xtalk->Fill(hits->at(ch).A);
+                            } else {
+                                hCH_xtalk->Fill(hits->at(ch).I);
+                            }
+                        }
                     }
                 }
             }
-            double mean_w_background = hFEBCH->GetMean();
-            hFEBCH->SetTitle((sCh + "_with_background" ).c_str());
-            hFEBCH->SetName((sCh + "_with_background" ).c_str());
+
+            auto beam_entry = fileInput->GetBeamEntry(ch);
+            for (int i = 0; i < beam_entry; ++i) {
+                fileInput->GetNextBeamEntry(i, ch);
+                if  (hits_beam->at(ch).Q < 1000) {
+                    if (hits_beam->at(ch).A > 5) {
+                        if (charge == 'A') {
+                            hFEBCH->Fill(hits_beam->at(ch).A);
+                        } else {
+                            hFEBCH->Fill(hits_beam->at(ch).I);
+                        }
+                    }
+                }
+            }
+
+            double mean_w_background = hCH_xtalk->GetMean();
+            hFEBCH->SetTitle((sCh + "_Calibration" ).c_str());
+            hFEBCH->SetName((sCh + "_Calibration" ).c_str());
+
+            hCH_xtalk->SetTitle((sCh + "_X-Talk" ).c_str());
+            hCH_xtalk->SetName((sCh + "_X-Talk" ).c_str());
+
             if (charge == 'A') {
                 hFEBCH->GetXaxis()->SetTitle("Amplitude [ADC]");
             } else {
                 hFEBCH->GetXaxis()->SetTitle("Integral [ADC]");
             }
-            hFEBCH->GetYaxis()->SetTitle("Number");
+            hFEBCH->GetYaxis()->SetTitle("N");
+            hCH_xtalk->GetYaxis()->SetTitle("N");
+            hCH_xtalk->Write();
 
-            hFEBCH->Write();
-
-            hFEBCH->SetTitle((sCh + "_without_background" ).c_str());
-            hFEBCH->SetName((sCh + "_without_background" ).c_str());
             TH1* histBackground;
             if (charge == 'A') {
                 histBackground = fTSpectrum->Background(hFEBCH, 10, "");
@@ -101,14 +133,15 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
                 double pedestalError {0.0};
                 uint peakNumber = 0;
                 for (uint i = 0; i < nfound; ++i) {
-                    int first_peak;
+                    double first_peak;
+                    double cut = 40;
                     if (charge == 'A') {
-                        first_peak = 5;
+                        first_peak = 6.5;
                     } else {
                         first_peak = 40;
                     }
                     double last_peak = xpeaks[0];
-                    if ( (i == 0 && xpeaks[0] > first_peak) || ( i != 0  && xpeaks[i] > xpeaks[i - 1] && xpeaks[i] > last_peak + 5) )  {
+                    if ( (i == 0 && xpeaks[0] > first_peak) || ( i != 0  && xpeaks[i] > xpeaks[i - 1] && xpeaks[i] > last_peak + 5 && xpeaks[i] < cut) )  {
                         TF1* fit_1;
                         if (charge == 'A') {
                             fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 3, xpeaks[i] + 3);
@@ -175,8 +208,8 @@ int main( int argc, char **argv ) {
     FileHandler fileOut(filename, "Calibration");
     std::shared_ptr<TFile> rFile = fileOut.GetOutputFilePointer();
     TDirectory* Ampl = rFile->mkdir("Amplitude");
-    TDirectory* Int = rFile->mkdir("Integral");
+    // TDirectory* Int = rFile->mkdir("Integral");
     Calib(filename, &fileInput,  &fileOut, Ampl, 'A');
-    Calib(filename, &fileInput,  &fileOut, Int, 'I');
+    // Calib(filename, &fileInput,  &fileOut, Int, 'I');
     return 0;
 }

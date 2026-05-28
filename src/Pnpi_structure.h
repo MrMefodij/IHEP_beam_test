@@ -48,11 +48,14 @@ namespace PNPI {
 
         TreeStructure* getTreeStructure();
         std::map<int,WaveFormParamStruct>* getSelfTreeStructure();
+        std::map<int,WaveFormParamStruct>* getBeamTreeStructure();
         std::set<int>* GetChannels();
         int GetEntries() const;
         uint GetSelfEntry(const uint ch);
+        uint GetBeamEntry(const uint ch);
         void GetNextEntry(int i);
         void GetNextEntry(uint i, uint ch);
+        void GetNextBeamEntry(uint i, uint ch);
 
     private:
         const std::string fileName_;
@@ -63,6 +66,10 @@ namespace PNPI {
 
         std::map<int, TTree *> allEventsSelfTrig_;
         std::map<int ,WaveFormParamStruct> sipmDataTrig_;
+
+        std::map<int, TTree *> allEventsBeamTrig_;
+        std::map<int ,WaveFormParamStruct> beamDataTrig_;
+
         int entries_;
     };
 }

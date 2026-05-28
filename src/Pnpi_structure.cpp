@@ -105,6 +105,17 @@ namespace PNPI{
                         allEvents_->SetBranchAddress((sCh).c_str(), &entry_._sipmData[ih]);
                     }
                 }
+
+                for (int ih = 0; ih <= CHANNELS_NUMBER; ++ih) {
+                    sChNum.str("");
+                    sChNum << std::setw(2) << std::setfill('0') << ih;
+                    sCh = "SiPM_55_" + sChNum.str();
+                    allEventsBeamTrig_[ih] = (TTree*) (fileInput_->Get(keyName));
+                    if (allEventsBeamTrig_[ih]->GetBranch((sCh).c_str())) {
+                        beamDataTrig_[ih] = {};
+                        allEventsBeamTrig_[ih]->SetBranchAddress((sCh).c_str(), &beamDataTrig_[ih]);
+                    }
+                }
             }
             else {
                 std::string s = "Self_55_";
@@ -129,6 +140,10 @@ namespace PNPI{
         return &sipmDataTrig_;
     }
 
+    std::map<int,WaveFormParamStruct>* PnpiRootFile::getBeamTreeStructure(){
+        return &beamDataTrig_;
+    }
+
     std::set<int>* PnpiRootFile::GetChannels(){
         return &availableChannels_;
     };
@@ -147,6 +162,16 @@ namespace PNPI{
         return 0.0;
     }
 
+    uint PnpiRootFile::GetBeamEntry(const uint ch){
+        auto iter = allEventsBeamTrig_.find(ch);
+        if(iter !=  allEventsBeamTrig_.end())
+            return allEventsBeamTrig_[ch]->GetEntries();
+        else{
+            std::cerr << "Channel \'" << ch << "\' isn't appropriate" << "\'\n";
+        }
+        return 0.0;
+    }
+
     void PnpiRootFile::GetNextEntry(int i){
         if (i <= entries_) {
             allEvents_->GetEntry(i);
@@ -156,5 +181,8 @@ namespace PNPI{
     }
     void PnpiRootFile::GetNextEntry(uint i, uint ch){
         allEventsSelfTrig_.at(ch)->GetEntry(i);
+    }
+    void PnpiRootFile::GetNextBeamEntry(uint i, uint ch){
+        allEventsBeamTrig_.at(ch)->GetEntry(i);
     }
 }
