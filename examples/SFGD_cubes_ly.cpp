@@ -37,6 +37,15 @@ int main( int argc, char **argv ) {
         std::vector<std::string> dataFiles = GetDataFiles(OutputDirName, ".root", "_HitStructure.");
         for (const auto &file: dataFiles) {
 
+            // для работы с жёстким диском
+            size_t lastSlash = file.rfind('/');
+            std::string fileNameOnly = (lastSlash == std::string::npos) ? file : file.substr(lastSlash + 1);
+
+            if (!fileNameOnly.empty() && fileNameOnly[0] == '.') {
+                std::cout << "Пропускаем временный файл: " << file << std::endl;
+                continue;
+            }
+
             HitFileInput files(file, "cubes_position", false);
             PrototypeHit *hit = files.getHitPointer();
 

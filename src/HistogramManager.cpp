@@ -96,7 +96,7 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
         double maxContent = hist->GetMaximum();
         double entries = hist->GetEntries();
 
-        currentThreshold = maxContent * 0.20; // кат по количеству событий
+        currentThreshold = maxContent * 0.18; // спец. кат по количеству событий, может быть и 20
 
         // Устанавливаем начальные значения для границ
         double minX = std::numeric_limits<double>::max();
@@ -355,6 +355,10 @@ LyHistogramManager::LyHistogramManager(unsigned int count) : HistogramManager(co
     averageLY_Y_ = std::make_unique<TH1F>("Average_Y_LY", "Average_Y_LY", FIBER_BINNING);
     averageTime_ = std::make_unique<TH1F>("Average_Time", "Average_Time", 600, 0 ,600);
     averageCubeResponse_ =  std::make_unique<TH2F>("Average_CubeResponse", "Average_CubeResponse", CUBES_BINNING);
+
+//    pixelsAverageLY_X_Y_ = std::make_unique<TH1F>("Pixel_Average_LY_X_Y", "Pixel_Average_LY_X_Y", CUBES_BINNING_Y);
+    pixelsAverageLY_X_ = std::make_unique<TH1F>("Pixel_Average_LY_X", "Pixel_Average_LY_X", CUBES_BINNING_X); // 1D
+    pixelsAverageLY_Y_ = std::make_unique<TH1F>("Pixel_Average_LY_Y", "Pixel_Average_LY_Y", CUBES_BINNING_Y);
 
     averageLY_->GetXaxis()->SetTitle("LY(X or Y)[p.e.]");
     averageLY_->GetYaxis()->SetTitle("Number");
@@ -1141,6 +1145,31 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         y_CubeLY_A_recon.at(i)->Write();
     }
 
+    auto LY_1D_X_Y = dirName->mkdir(Form("LY_1D_X_Y")); // 1D
+    auto LY_1D_X = LY_1D_X_Y->mkdir(Form("LY_1D_X"));
+    auto LY_1D_Y = LY_1D_X_Y->mkdir(Form("LY_1D_Y"));
+
+//    this->FillPixelAverageData_X_Y (LY_1D_X_Y, pixelsAverageSummLY_, pixelsAverageLY_X_Y_.get(),
+//                                          "pixel_average_right", 200);
+    this->FillPixelAverageData_X(LY_1D_X, pixelsAverageXLY_, pixelsAverageLY_X_.get(),
+                                          "pixel_average_LY_X", 100);
+    this->FillPixelAverageData_Y(LY_1D_Y, pixelsAverageYLY_, pixelsAverageLY_Y_.get(),
+                                       "pixel_average_LY_Y", 100);
+
+
+    LY_1D_X_Y->cd();
+//    pixelsAverageLY_X_Y_->GetYaxis()->SetRangeUser(0, 50);
+//    pixelsAverageLY_X_Y_->Write();
+    pixelsAverageLY_X_->GetYaxis()->SetRangeUser(0, 50);
+    pixelsAverageLY_X_->GetXaxis()->SetTitle("X or Y [mm]");
+    pixelsAverageLY_X_->GetYaxis()->SetTitle("LY [p.e.]");
+    pixelsAverageLY_X_->Write();
+
+    pixelsAverageLY_Y_->GetXaxis()->SetTitle("X or Y [mm]");
+    pixelsAverageLY_Y_->GetYaxis()->SetTitle("LY [p.e.]");
+    pixelsAverageLY_Y_->GetYaxis()->SetRangeUser(0, 50);
+    pixelsAverageLY_Y_->Write(); // 1D
+
     auto Fibers_LY_I = dirName->mkdir("Fibers_LY_I");
     Fibers_LY_I->cd();
     for (int i = 0; i < CUBES_COUNT; ++i) {
@@ -1371,514 +1400,116 @@ double LyHistogramManager::FillPixelData(std::vector<double>* data, TF1* fit, TH
     tempHist->Delete();
     return result;
 }
-//
-//void LyHistogramManager::PreparePlotsForGeometry(TDirectory* dirName, const std::map<int,CubePosition>* locationMap) {
-//    auto Geometry = dirName->mkdir("PlotsForGeometry");
-//    std::vector<CubeMapLY> x_avr;
-//    std::vector<CubeMapLY> y_avr;
-//    x_avr.reserve(DEFAULT_BINNING);
-//    y_avr.reserve(DEFAULT_BINNING);
-//
-//    std::array<std::vector<CubeMapLY>,CUBES_COUNT> ly_x_on_x{};
-//    std::array<std::vector<CubeMapLY>,CUBES_COUNT> ly_y_on_y{};
-//
-//    auto x_LY_on_X_projection = std::make_unique<TH1F>("x_LY_on_X_projection_AVR", "x_LY_on_X_projection_AVR", SINGLE_CUBE_BINNING_1D);
-//    std::array<std::unique_ptr<TH1F>,DEFAULT_BINNING> x_LY_on_X_bin;
-//    x_LY_on_X_projection.get()->GetXaxis()->SetTitle("X[mm]");
-//    x_LY_on_X_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//    auto y_LY_on_Y_projection = std::make_unique<TH1F>("y_LY_on_Y_projection_AVR", "y_LY_on_Y_projection_AVR", SINGLE_CUBE_BINNING_1D);
-//    std::array<std::unique_ptr<TH1F>,DEFAULT_BINNING> y_LY_on_Y_bin;
-//    y_LY_on_Y_projection.get()->GetXaxis()->SetTitle("Y[mm]");
-//    y_LY_on_Y_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//    for (int bin = 0; bin < DEFAULT_BINNING; ++bin) {
-//        x_LY_on_X_bin[bin] = std::make_unique<TH1F>(Form("x_LY_on_X_AVR_bin_%d",bin), Form("x_LY_on_X_AVR_bin_%d",bin), GAUS_BINNING);
-//        y_LY_on_Y_bin[bin] = std::make_unique<TH1F>(Form("y_LY_on_Y_AVR_bin_%d",bin), Form("y_LY_on_Y_AVR_bin_%d",bin), GAUS_BINNING);
-//        x_LY_on_X_bin[bin].get()->GetXaxis()->SetTitle("LY[p.e.]");
-//        x_LY_on_X_bin[bin].get()->GetYaxis()->SetTitle("Number");
-//        y_LY_on_Y_bin[bin].get()->GetXaxis()->SetTitle("LY[p.e.]");
-//        y_LY_on_Y_bin[bin].get()->GetYaxis()->SetTitle("Number");
-//    }
-//    std::array<std::unique_ptr<TH1F>, CUBES_COUNT> x_LY_X_projection;
-//    std::array<std::unique_ptr<TH1F>, CUBES_COUNT> y_LY_Y_projection;
-//
-//    for (int cube = 0; cube <CUBES_COUNT; ++cube) {
-//        int layer = (cube/3)%3;
-//
-//        ly_x_on_x[cube].reserve(DEFAULT_BINNING);
-//        ly_y_on_y[cube].reserve(DEFAULT_BINNING);
-//
-//        if (locationMap->find(cube) == locationMap->end()) {
-//            std::cerr << "Warning: Cube " << cube << " not found in locationMap. Skipping..." << std::endl;
-//            continue;
-//        }
-//
-//        const auto cube_position = locationMap->at(cube);
-//        auto cube_plots = Geometry->mkdir(Form("cube_%d", cube));
-//        cube_plots->cd();
-//        {
-//            auto binX_min = histogramsLY_normalized_layer_[0]->GetXaxis()->FindBin(cube_position._x_min);
-//            auto binX_max = histogramsLY_normalized_layer_[0]->GetXaxis()->FindBin(cube_position._x_max);
-//            auto binY_min = histogramsLY_normalized_layer_[0]->GetYaxis()->FindBin(cube_position._y_min);
-//            auto binY_max = histogramsLY_normalized_layer_[0]->GetYaxis()->FindBin(cube_position._y_max);
-//
-//            auto summ_LY_X_projection = std::make_unique<TH1F>(Form("summ_LY_X_projection_%d", cube), Form("summ_LY_X_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            auto summ_LY_Y_projection = std::make_unique<TH1F>(Form("summ_LY_Y_projection_%d", cube), Form("summ_LY_Y_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            summ_LY_X_projection.get()->GetXaxis()->SetTitle("X[mm]");
-//            summ_LY_X_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//            summ_LY_Y_projection.get()->GetXaxis()->SetTitle("Y[mm]");
-//            summ_LY_Y_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//            x_LY_X_projection[cube] = std::make_unique<TH1F>(Form("x_LY_X_projection_%d", cube), Form("x_LY_X_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            auto x_LY_Y_projection = std::make_unique<TH1F>(Form("x_LY_Y_projection_%d", cube), Form("x_LY_Y_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            x_LY_X_projection[cube].get()->GetXaxis()->SetTitle("X[mm]");
-//            x_LY_X_projection[cube].get()->GetYaxis()->SetTitle("LY[p.e.]");
-//            x_LY_Y_projection.get()->GetXaxis()->SetTitle("Y[mm]");
-//            x_LY_Y_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//            auto y_LY_X_projection = std::make_unique<TH1F>(Form("y_LY_X_projection_%d", cube), Form("y_LY_X_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            y_LY_Y_projection[cube] = std::make_unique<TH1F>(Form("y_LY_Y_projection_%d", cube), Form("y_LY_Y_projection_%d", cube), SINGLE_CUBE_BINNING_1D);
-//            y_LY_X_projection.get()->GetXaxis()->SetTitle("X[mm]");
-//            y_LY_X_projection.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//            y_LY_Y_projection[cube].get()->GetXaxis()->SetTitle("Y[mm]");
-//            y_LY_Y_projection[cube].get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//            TF1* fit = new TF1("gaus","gaus", 10 , 200);
-//            for (int x = binX_min; x <= binX_max; ++x) {
-//                FillPixelProjectionXData(cube_plots, pixelsDataSummLY_, fit, summ_LY_X_projection.get(), Form("projection_layer_%i_for_x_%i_summ", layer, x ), x, binX_min, binX_max, 0, binY_min, binY_max, layer, 140);
-//                const auto ly_x = FillPixelProjectionXData(cube_plots, pixelsDataXLY_, fit, x_LY_X_projection[cube].get(), Form("projection_layer_%i_for_x_%i_x", layer, x ), x, binX_min, binX_max, 0, binY_min, binY_max, layer, 70);
-//                FillPixelProjectionXData(cube_plots, pixelsDataYLY_, fit, y_LY_X_projection.get(), Form("projection_layer_%i_for_x_%i_y", layer, x ), x, binX_min, binX_max, 0, binY_min, binY_max, layer, 70);
-//                ly_x_on_x[cube].push_back({x - binX_min,0,ly_x});
-//                for (int y = binY_min; y < binY_max && x - binX_min < DEFAULT_BINNING; ++y) {
-//                    for (const auto & ly: pixelsDataXLY_[layer][x][y]) {
-//                        x_LY_on_X_bin[x - binX_min].get()->Fill(ly);
-//                    }
-//                }
-//            }
-//            cube_plots->cd();
-//            summ_LY_X_projection->Write();
-//            x_LY_X_projection[cube]->Write();
-//            y_LY_X_projection->Write();
-//            for (int y = binY_min; y < binY_max; ++y) {
-//                FillPixelProjectionYData(cube_plots, pixelsDataSummLY_, fit, summ_LY_Y_projection.get(), Form("projection_layer_%i_for_y_%i_summ", layer, y ), 0, binX_min, binX_max, y, binY_min, binY_max, layer, 140);
-//                FillPixelProjectionYData(cube_plots, pixelsDataXLY_, fit, x_LY_Y_projection.get(), Form("projection_layer_%i_for_y_%i_x", layer, y ), 0, binX_min, binX_max, y, binY_min, binY_max, layer, 70);
-//                const auto ly_y = FillPixelProjectionYData(cube_plots, pixelsDataYLY_, fit, y_LY_Y_projection[cube].get(), Form("projection_layer_%i_for_y_%i_y", layer, y ), 0, binX_min, binX_max, y, binY_min, binY_max, layer, 70);
-//                ly_y_on_y[cube].push_back({0,y - binY_min,ly_y});
-//                for (int x = binX_min; x <= binX_max; ++x) {
-//                    for (const auto & ly: pixelsDataYLY_[layer][x][y]) {
-//                        y_LY_on_Y_bin[y - binY_min].get()->Fill(ly);
-//                    }
-//                }
-//            }
-//            cube_plots->cd();
-//            summ_LY_Y_projection->Write();
-//            x_LY_Y_projection->Write();
-//            y_LY_Y_projection[cube]->Write();
-//        }
-//    }
-//
-//    auto avr_Cube = Geometry->mkdir("Avr_Cube");
-//    auto X = avr_Cube->mkdir("X");
-//    auto Y = avr_Cube->mkdir("Y");
-//    TF1* fit = new TF1("gaus","gaus", 10 , 100);
-//    for (int bin = 0; bin < DEFAULT_BINNING; ++bin) {
-//        std::unique_ptr<TSpectrum> tSpectrum = std::make_unique<TSpectrum>(15);
-//        int nFound = tSpectrum->Search(x_LY_on_X_bin[bin].get(),10,"nobackground new",0.1);
-//        {
-//            if(nFound > 0) {
-//                double *xpeaks = tSpectrum->GetPositionX();
-//                for (uint peak = 0; peak < nFound; ++peak) {
-//                    if (xpeaks[peak] > 15) {
-//                        x_LY_on_X_bin[bin]->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
-//                        break;
-//                    }
-//                }
-//            }
-//            X->cd();
-//            x_LY_on_X_bin[bin]->Write();
-//
-//            double pixelLY = fit->GetParameter(1);
-//            x_avr.push_back({bin,0,pixelLY});
-//
-//            if (pixelLY > 0) {
-//                x_LY_on_X_projection->SetBinContent(bin, pixelLY);
-//            }
-//        }
-//
-//        {
-//            nFound = tSpectrum->Search(y_LY_on_Y_bin[bin].get(),10,"nobackground new",0.1);
-//            if(nFound > 0) {
-//                double *xpeaks = tSpectrum->GetPositionX();
-//                for (uint peak = 0; peak < nFound; ++peak) {
-//                    if (xpeaks[peak] > 15) {
-//                        y_LY_on_Y_bin[bin]->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
-//                        break;
-//                    }
-//                }
-//            }
-//            Y->cd();
-//            y_LY_on_Y_bin[bin]->Write();
-//
-//            double pixelLY = fit->GetParameter(1);
-//            y_avr.push_back({0,bin,pixelLY});
-//            if (pixelLY > 0 ) {
-//                y_LY_on_Y_projection->SetBinContent(bin, pixelLY);
-//            }
-//        }
-//    }
-//
-//    for (int cube = 0; cube < CUBES_COUNT; ++cube) {
-//        auto cube_plots = Geometry->GetDirectory(Form("cube_%d", cube));
-//        auto Diff_X_on_X_LY = std::make_unique<TH1F>(Form("Diff_X_on_X_LY_%d", cube), Form("Diff_X_on_X_LY_%d", cube), SINGLE_CUBE_BINNING_1D);
-//        auto Diff_Y_on_Y_LY = std::make_unique<TH1F>(Form("Diff_Y_on_Y_LY_%d", cube), Form("Diff_Y_on_Y_LY_%d", cube), SINGLE_CUBE_BINNING_1D);
-//        Diff_X_on_X_LY.get()->GetXaxis()->SetTitle("X[mm]");
-//        Diff_X_on_X_LY.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//        Diff_Y_on_Y_LY.get()->GetXaxis()->SetTitle("Y[mm]");
-//        Diff_Y_on_Y_LY.get()->GetYaxis()->SetTitle("LY[p.e.]");
-//
-//        TCanvas c1 = TCanvas(Form("Same_Y_on_Y_cube_%d_LY_avrLY",cube), Form("Same_Y_on_Y_cube_%d_LY_avrLY",cube), 800, 600);
-//        y_LY_on_Y_projection->SetTitle(Form("Same_Y_on_Y_cube_%d_LY_avrLY",cube));
-//        y_LY_on_Y_projection->Draw("HIST");
-//        y_LY_on_Y_projection->SetLineColor(kRed);
-//        y_LY_Y_projection[cube]->Draw("HIST SAME");
-//        y_LY_Y_projection[cube]->SetLineColor(kBlue);
-//        c1.Update();
-//
-//        TCanvas c2 = TCanvas(Form("Same_X_on_X_cube_%d_LY_avrLY",cube), Form("Same_X_on_X_cube_%d_LY_avrLY",cube), 800, 600);
-//        x_LY_on_X_projection->SetTitle(Form("Same_X_on_X_cube_%d_LY_avrLY",cube));
-//        x_LY_on_X_projection->Draw("HIST_2");
-//        x_LY_on_X_projection->SetLineColor(kRed);
-//        x_LY_X_projection[cube]->Draw("HIST_2 SAME");
-//        x_LY_X_projection[cube]->SetLineColor(kBlue);
-//        c2.Update();
-//
-//        for (int bin = 0; bin < DEFAULT_BINNING; ++bin) {
-//            {
-//                auto it = std::find_if(ly_x_on_x[cube].begin(), ly_x_on_x[cube].end(), [&](const auto ly) {
-//                   return bin == ly.x_;
-//               });
-//                auto it_avr = std::find_if(x_avr.begin(), x_avr.end(), [&](const auto ly) {
-//                    return bin == ly.x_;
-//                });
-//                if (it != ly_x_on_x[cube].end() && it_avr != x_avr.end())
-//                    Diff_X_on_X_LY->SetBinContent(bin, (it->ly_ - it_avr->ly_)/it_avr->ly_);
-//            }
-//            {
-//                auto it = std::find_if(ly_y_on_y[cube].begin(), ly_y_on_y[cube].end(), [&](const auto ly) {
-//                   return bin == ly.y_;
-//               });
-//                auto it_avr = std::find_if(y_avr.begin(), y_avr.end(), [&](const auto ly) {
-//                    return bin == ly.y_;
-//                });
-//                if (it != ly_y_on_y[cube].end() && it_avr != y_avr.end())
-//                    Diff_Y_on_Y_LY->SetBinContent(bin, (it->ly_ - it_avr->ly_)/it_avr->ly_);
-//            }
-//        }
-//        cube_plots->cd();
-//        Diff_X_on_X_LY->Write();
-//        Diff_Y_on_Y_LY->Write();
-//        c1.Write();
-//        c2.Write();
-//    }
-//
-//    avr_Cube->cd();
-//    x_LY_on_X_projection->Write();
-//    y_LY_on_Y_projection->Write();
-//}
-//void LyHistogramManager::PreparePlotsForMC(TDirectory* dirName, const std::map<int,CubePosition>* locationMap) {
-//    auto MC = dirName->mkdir("PlotsForMC");
-//    std::vector<CubeMapLY> ly_summ_avr;
-//    std::vector<CubeMapLY> ly_x_avr;
-//    std::vector<CubeMapLY> ly_y_avr;
-//    ly_summ_avr.reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//    ly_x_avr.reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//    ly_y_avr.reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//
-//    std::array<std::vector<CubeMapLY>,CUBES_COUNT> ly_summ{};
-//    std::array<std::vector<CubeMapLY>,CUBES_COUNT> ly_x{};
-//    std::array<std::vector<CubeMapLY>,CUBES_COUNT> ly_y{};
-//
-//    for (int cube = 0; cube <CUBES_COUNT; ++cube) {
-//        ly_summ[cube].reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//        ly_x[cube].reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//        ly_y[cube].reserve(DEFAULT_BINNING*DEFAULT_BINNING);
-//        int layer = (cube/3)%3;
-//
-//        if (locationMap->find(cube) == locationMap->end()) {
-//            std::cerr << "Warning: Cube " << cube << " not found in locationMap. Skipping..." << std::endl;
-//            continue;
-//        }
-//        const auto cube_position = locationMap->at(cube);
-//
-//
-//        if (histogramsLY_normalized_layer_.empty() || !histogramsLY_normalized_layer_[0]) {
-//            std::cerr << "Critical Error: histogramsLY_normalized_layer_ is empty!" << std::endl;
-//            return;
-//        }
-//
-//        auto cube_plots = MC->mkdir(Form("cube_%d", cube));
-//        cube_plots->cd();
-//        auto cube_LY_sum_mean = std::make_unique<TH2F>(Form("cube_LY_Summ_Mean_%d", cube), Form("cube_LY_Summ_Mean_%d", cube), CUBES_BINNING);
-//        auto cube_LY_X_mean = std::make_unique<TH2F>(Form("cube_LY_X_Mean_%d", cube), Form("cube_LY_X_Mean_%d", cube), CUBES_BINNING);
-//        auto cube_LY_Y_mean = std::make_unique<TH2F>(Form("cube_LY_Y_Mean_%d", cube), Form("cube_LY_Y_Mean_%d", cube), CUBES_BINNING);
-//        cube_LY_sum_mean.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_sum_mean.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_sum_mean.get()->GetZaxis()->SetTitle("LY[p.e.]");
-//        cube_LY_X_mean.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_X_mean.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_X_mean.get()->GetZaxis()->SetTitle("LY[p.e.]");
-//        cube_LY_Y_mean.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_Y_mean.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_Y_mean.get()->GetZaxis()->SetTitle("LY[p.e.]");
-//
-//        auto cube_LY_sum_error = std::make_unique<TH2F>(Form("cube_LY_Summ_Error_%d", cube), Form("cube_LY_Summ_Error_%d", cube), CUBES_BINNING);
-//        auto cube_LY_X_error = std::make_unique<TH2F>(Form("cube_LY_X_Error_%d", cube), Form("cube_LY_X_Error_%d", cube), CUBES_BINNING);
-//        auto cube_LY_Y_error = std::make_unique<TH2F>(Form("cube_LY_Y_Error_%d", cube), Form("cube_LY_Y_Error_%d", cube), CUBES_BINNING);
-//        cube_LY_sum_error.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_sum_error.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_sum_error.get()->GetZaxis()->SetTitle("Error[p.e.]");
-//        cube_LY_X_error.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_X_error.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_X_error.get()->GetZaxis()->SetTitle("Error[p.e.]");
-//        cube_LY_Y_error.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_Y_error.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_Y_error.get()->GetZaxis()->SetTitle("Error[p.e.]");
-//
-//        auto cube_LY_sum_sigma = std::make_unique<TH2F>(Form("cube_LY_Summ_Sigma_%d", cube), Form("cube_LY_Summ_Sigma_%d", cube), CUBES_BINNING);
-//        auto cube_LY_X_sigma = std::make_unique<TH2F>(Form("cube_LY_X_Sigma_%d", cube), Form("cube_LY_X_Sigma_%d", cube), CUBES_BINNING);
-//        auto cube_LY_Y_sigma = std::make_unique<TH2F>(Form("cube_LY_Y_Sigma_%d", cube), Form("cube_LY_Y_Sigma_%d", cube), CUBES_BINNING);
-//        cube_LY_sum_sigma.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_sum_sigma.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_sum_sigma.get()->GetZaxis()->SetTitle("Sigma[p.e.]");
-//        cube_LY_X_sigma.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_X_sigma.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_X_sigma.get()->GetZaxis()->SetTitle("Sigma[p.e.]");
-//        cube_LY_Y_sigma.get()->GetXaxis()->SetTitle("X[mm]");
-//        cube_LY_Y_sigma.get()->GetYaxis()->SetTitle("Y[mm]");
-//        cube_LY_Y_sigma.get()->GetZaxis()->SetTitle("Sigma[p.e.]");
-//
-//        {
-//            auto binX_min = histogramsLY_normalized_layer_[0]->GetXaxis()->FindBin(cube_position._x_min);
-//            auto binX_max = histogramsLY_normalized_layer_[0]->GetXaxis()->FindBin(cube_position._x_max);
-//            auto binY_min = histogramsLY_normalized_layer_[0]->GetYaxis()->FindBin(cube_position._y_min);
-//            auto binY_max = histogramsLY_normalized_layer_[0]->GetYaxis()->FindBin(cube_position._y_max);
-//            // std::cout << cube << " : " << AS_KV(binX_min) << ' ' << AS_KV(binX_max) << ' ' << AS_KV(binY_min) << ' ' << AS_KV(binY_max) <<std::endl;
-//            for (int x = binX_min; x <= binX_max; ++x) {
-//                for (int y = binY_min; y < binY_max; ++y) {
-//                    TF1* fit = new TF1("gaus","gaus", 10 , 200);
-//                    if (!pixelsDataSummLY_[layer][x][y].empty()) {
-//                        auto ly = FillPixelData(&pixelsDataSummLY_[layer][x][y], fit, cube_LY_sum_mean.get(), cube_LY_sum_error.get(), cube_LY_sum_sigma.get(),
-//                            Form("pixel_%i_%i_%i_summ", layer, x, y), x, y, 140);
-//                        if (ly > 0) {
-//                            ly_summ[cube].push_back({x - binX_min, y - binY_min, ly});
-//                        }
-//                    }
-//                    //----------------------------------------//----------------------------------------//
-//                    if (!pixelsDataXLY_[layer][x][y].empty()) {
-//                        fit = new TF1("gaus","gaus", 20 , 80);
-//                        auto ly = FillPixelData(&pixelsDataXLY_[layer][x][y], fit, cube_LY_X_mean.get(), cube_LY_X_error.get(), cube_LY_X_sigma.get(),
-//                            Form("pixel_%i_%i_%i_x",layer,x,y),x,y, 70);
-//                        if (ly > 0) {
-//                            ly_x[cube].push_back({x - binX_min, y - binY_min, ly});
-//                        }
-//                    }
-//                    //----------------------------------------//----------------------------------------//
-//                    if (!pixelsDataYLY_[layer][x][y].empty()) {
-//                        fit = new TF1("gaus","gaus", 20 , 80);
-//                        auto ly = FillPixelData(&pixelsDataYLY_[layer][x][y], fit, cube_LY_Y_mean.get(),cube_LY_Y_error.get(),cube_LY_Y_sigma.get(),
-//                       Form("pixel_%i_%i_%i_y",layer,x,y),x,y,70);
-//                        if (ly > 0) {
-//                            ly_y[cube].push_back({x - binX_min, y - binY_min, ly});
-//                        }
-//                    }
-//                    fit->Delete();
-//                }
-//            }
-//        }
-//        cube_LY_sum_mean->Write();
-//        cube_LY_X_mean->Write();
-//        cube_LY_Y_mean->Write();
-//        cube_LY_sum_error->Write();
-//        cube_LY_X_error->Write();
-//        cube_LY_Y_error->Write();
-//        cube_LY_sum_sigma->Write();
-//        cube_LY_X_sigma->Write();
-//        cube_LY_Y_sigma->Write();
-//    }
-//    auto cube_LY_sum_arv = std::make_unique<TH2F>("cube_LY_Summ_Mean_Avr", "cube_LY_Summ_Mean_Avr", SINGLE_CUBE_BINNING);
-//    auto cube_LY_X_arv = std::make_unique<TH2F>("cube_LY_X_Mean_Avr", "cube_LY_X_Mean_Avr", SINGLE_CUBE_BINNING);
-//    auto cube_LY_Y_arv = std::make_unique<TH2F>("cube_LY_Y_Mean_Avr", "cube_LY_Y_Mean_Avr", SINGLE_CUBE_BINNING);
-//    cube_LY_sum_arv->GetXaxis()->SetTitle("X[mm]");
-//    cube_LY_sum_arv->GetYaxis()->SetTitle("Y[mm]");
-//    cube_LY_sum_arv.get()->GetZaxis()->SetTitle("LY_X+Y[p.e.]");
-//    cube_LY_X_arv.get()->GetXaxis()->SetTitle("X[mm]");
-//    cube_LY_X_arv.get()->GetYaxis()->SetTitle("Y[mm]");
-//    cube_LY_X_arv.get()->GetZaxis()->SetTitle("LY_X[p.e.]");
-//    cube_LY_Y_arv.get()->GetXaxis()->SetTitle("X[mm]");
-//    cube_LY_Y_arv.get()->GetYaxis()->SetTitle("Y[mm]");
-//    cube_LY_Y_arv.get()->GetZaxis()->SetTitle("LY_Y[p.e.]");
-//    for (int x = 0; x < DEFAULT_BINNING; ++x) {
-//        for (int y = 0; y < DEFAULT_BINNING; ++y) {
-//            size_t count_summ = 0, count_x = 0, count_y = 0;
-//            CubeMapLY temp_summ{x,y,0};
-//            CubeMapLY temp_x{x,y,0};
-//            CubeMapLY temp_y{x,y,0};
-//            for (int cube = 0; cube < CUBES_COUNT; ++cube) {
-//                {
-//                    auto it = std::find_if(ly_summ[cube].begin(), ly_summ[cube].end(), [&](const auto ly) {
-//                       return x == ly.x_ && y == ly.y_;
-//                   });
-//                    if (it != ly_summ[cube].end()) {
-//                        temp_summ.ly_ += it->ly_;
-//                        ++count_summ;
-//                    }
-//                }
-//                {
-//                    auto it = std::find_if(ly_x[cube].begin(), ly_x[cube].end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//                    if (it != ly_x[cube].end()) {
-//                        temp_x.ly_ += it->ly_;
-//                        ++count_x;
-//                    }
-//                }
-//                {
-//                    auto it = std::find_if(ly_y[cube].begin(), ly_y[cube].end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//                    if (it != ly_y[cube].end()) {
-//                        temp_y.ly_ += it->ly_;
-//                        ++count_y;
-//                    }
-//                }
-//            }
-//            temp_summ.ly_ = temp_summ.ly_/count_summ;
-//            if (temp_summ.ly_ > 0) {
-//                cube_LY_sum_arv->SetBinContent(x,y,temp_summ.ly_);
-//                ly_summ_avr.push_back(std::move(temp_summ));
-//            }
-//
-//            temp_x.ly_ = temp_x.ly_ / count_x;
-//            if (temp_x.ly_ > 0) {
-//                cube_LY_X_arv->SetBinContent(x,y,temp_x.ly_);
-//                ly_x_avr.push_back(std::move(temp_x));
-//            }
-//
-//            temp_y.ly_ = temp_y.ly_ / count_y;
-//            if (temp_y.ly_ > 0) {
-//                cube_LY_Y_arv->SetBinContent(x,y,temp_y.ly_);
-//                ly_y_avr.push_back(std::move(temp_y));
-//            }
-//        }
-//    }
-//    MC->cd();
-//    cube_LY_sum_arv->Write();
-//    cube_LY_X_arv->Write();
-//    cube_LY_Y_arv->Write();
-//
-//    for (int cube = 0; cube < CUBES_COUNT; ++cube) {
-//        auto cube_plots = MC->GetDirectory(Form("cube_%d", cube));
-//        cube_plots->cd();
-//        auto cube_LY_sum_diff = std::make_unique<TH2F>(Form("cube_LY_Summ_Diff_%d", cube), Form("cube_LY_Summ_Diff_%d", cube), SINGLE_CUBE_BINNING);
-//        auto cube_LY_X_diff = std::make_unique<TH2F>(Form("cube_LY_X_Diff_%d", cube), Form("cube_LY_X_Diff_%d", cube), SINGLE_CUBE_BINNING);
-//        auto cube_LY_Y_diff = std::make_unique<TH2F>(Form("cube_LY_Y_Diff_%d", cube), Form("cube_LY_Y_Diff_%d", cube), SINGLE_CUBE_BINNING);
-//        for (int x = 0; x < DEFAULT_BINNING - 1; ++x) {
-//            for (int y = 0; y < DEFAULT_BINNING - 1; ++y) {
-//                {
-//                    auto it_avr = std::find_if(ly_summ_avr.begin(), ly_summ_avr.end(), [&](const auto ly) {
-//                       return x == ly.x_ && y == ly.y_;
-//                   });
-//
-//                    auto it = std::find_if(ly_summ[cube].begin(), ly_summ[cube].end(), [&](const auto ly) {
-//                       return x == ly.x_ && y == ly.y_;
-//                   });
-//
-//                    if (it != ly_summ[cube].end()) {
-//                        auto ly_diff = (it->ly_ - it_avr->ly_)/it_avr->ly_;
-//                        cube_LY_sum_diff->SetBinContent(x,y,ly_diff);
-//                    }
-//                }
-//                {
-//                    auto it_avr = std::find_if(ly_x_avr.begin(), ly_x_avr.end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//
-//                    auto it = std::find_if(ly_x[cube].begin(), ly_x[cube].end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//
-//                    if (it != ly_x[cube].end()) {
-//                        auto ly_diff = (it->ly_ - it_avr->ly_)/it_avr->ly_;
-//                        cube_LY_X_diff->SetBinContent(x,y,ly_diff);
-//                    }
-//                }
-//                {
-//                    auto it_avr = std::find_if(ly_y_avr.begin(), ly_y_avr.end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//
-//                    auto it = std::find_if(ly_y[cube].begin(), ly_y[cube].end(), [&](const auto ly) {
-//                        return x == ly.x_ && y == ly.y_;
-//                    });
-//
-//                    if (it != ly_y[cube].end()) {
-//                        auto ly_diff = (it->ly_ - it_avr->ly_)/it_avr->ly_;
-//                        cube_LY_Y_diff->SetBinContent(x,y,ly_diff);
-//                    }
-//                }
-//            }
-//        }
-//        cube_LY_sum_diff->Write();
-//        cube_LY_X_diff->Write();
-//        cube_LY_Y_diff->Write();
-//    }
-//}
+
 void LyHistogramManager::FillPixelFiberData(TDirectory* dir, std::vector<double>* data, TH1F* hist, TH1F* histAvr, TH1F* histCompr, const char* title, int position) {
     dir->cd();
-    TH1F* tempHist =  new TH1F(title, title,GAUS_FIBER_BINNING);
+    TH1F *tempHist = new TH1F(title, title, GAUS_FIBER_BINNING);
     unsigned int peak1_count = 0;
     unsigned int peak2_count = 0;
 
-    for (const double & it : *data) {
+    for (const double &it: *data) {
         tempHist->Fill(it);
         it < 18 ? ++peak1_count : ++peak2_count;
     }
 
-    std::unique_ptr<TSpectrum> tSpectrum = std::make_unique<TSpectrum>(15);
-    int nFound = tSpectrum->Search(tempHist,10,"nobackground new",0.1);
-    TF1* fit = new TF1("gaus","gaus");
-    if(nFound > 0) {
-        double *xpeaks = tSpectrum->GetPositionX();
-        for (uint peak = 0; peak < nFound; ++peak) {
-            if (xpeaks[peak] >= 18 && xpeaks[peak] < 70) {
-                fit = new TF1("gaus","gaus");
-                tempHist->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
-                break;
+    if (tempHist->GetEntries() > 15000) { // спец. кат для рана 125-138
+
+        std::unique_ptr<TSpectrum> tSpectrum = std::make_unique<TSpectrum>(15);
+        int nFound = tSpectrum->Search(tempHist, 10, "nobackground new", 0.1);
+        TF1 *fit = new TF1("gaus", "gaus");
+        if (nFound > 0) {
+            double *xpeaks = tSpectrum->GetPositionX();
+            for (uint peak = 0; peak < nFound; ++peak) {
+                if (xpeaks[peak] >= 18 && xpeaks[peak] < 70) {
+                    fit = new TF1("gaus", "gaus");
+                    tempHist->Fit(fit, "qr+", "", xpeaks[peak] - 15, xpeaks[peak] + 15);
+                    break;
+                }
+                if (xpeaks[peak] > 0 && xpeaks[peak] < 18) {
+                    fit = new TF1("landau", "landau");
+                    tempHist->Fit(fit, "qr+", "", xpeaks[peak] - 5, xpeaks[peak] + 5);
+                    break;
+                }
             }
-            if (xpeaks[peak] > 0 && xpeaks[peak] < 18) {
-                fit = new TF1("landau","landau");
-                tempHist->Fit(fit,"qr+", "", xpeaks[peak] - 5, xpeaks[peak] + 5);
-                break;
+        }
+        tempHist->Draw();
+        tempHist->GetXaxis()->SetTitle("LY [p.e.]");
+        tempHist->GetYaxis()->SetTitle("Number");
+        tempHist->Write();
+        // std::cout << "total: " << data->size() << " peak_1: " << peak1_count << " peak_2: " << peak2_count << std::endl;
+        if (tempHist->GetEntries() > 400)
+            histCompr->SetBinContent(position, static_cast<double>(peak1_count) / static_cast<double>(peak2_count));
+
+        double pixelLY = fit->GetParameter(1);
+        if (pixelLY > 0 && pixelLY < 80) {
+            hist->SetBinContent(position, pixelLY);
+        }
+
+        histAvr->SetBinContent(position, tempHist->GetMean());
+        tempHist->Delete();
+    }
+}
+
+
+void LyHistogramManager::FillPixelAverageData_X(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) { // 1D
+    dir->cd();
+    std::unique_ptr<TH1F> tempHist[CUBES_SLICE_X];
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        std::string name = title + '_' + std::to_string(x);
+        tempHist[x] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), LY_BINNING_2);
+    }
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            for (const auto it : data[x][y]) {
+                tempHist[x]->Fill(it);
+            }
+        }
+
+        if (tempHist[x]->GetEntries() > 15000) { // спец. кат для рана 125-138
+            tempHist[x]->GetXaxis()->SetTitle("LY [p.e.]");
+            tempHist[x]->GetYaxis()->SetTitle("N");
+            TF1* gausFit = new TF1("gaus", "gaus", 15, 35);
+            tempHist[x]->Fit(gausFit, "QR");
+            tempHist[x]->Draw();
+            tempHist[x]->Write();
+//            double pixel_mean = tempHist[x]->GetMean();
+            double pixel_mean = gausFit->GetParameter(1);
+            if ((pixel_mean == 0 ||  pixel_mean > 0) && pixel_mean < cut) {
+                hist->SetBinContent(x, pixel_mean);
             }
         }
     }
-    tempHist->Draw();
-    tempHist->GetXaxis()->SetTitle("LY [p.e.]");
-    tempHist->GetYaxis()->SetTitle("Number");
-    tempHist->Write();
-    // std::cout << "total: " << data->size() << " peak_1: " << peak1_count << " peak_2: " << peak2_count << std::endl;
-    if (tempHist->GetEntries() > 400)
-        histCompr->SetBinContent(position, static_cast<double>(peak1_count)/static_cast<double>(peak2_count));
-
-    double pixelLY = fit->GetParameter(1);
-    if (pixelLY > 0 && pixelLY < 80) {
-        hist->SetBinContent(position,pixelLY);
-    }
-
-    histAvr->SetBinContent(position, tempHist->GetMean());
-    tempHist->Delete();
 }
+
+void LyHistogramManager::FillPixelAverageData_Y(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+    dir->cd();
+    std::unique_ptr<TH1F> tempHist[CUBES_SLICE_Y];
+    for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+        std::string name = title + '_' + std::to_string(y);
+        tempHist[y] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), LY_BINNING_2);
+    }
+    for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+        for (int x = 0; x < CUBES_SLICE_X; ++x) {
+            for (const auto it : data[x][y]) {
+                tempHist[y]->Fill(it);
+            }
+        }
+        if ( tempHist[y]->GetEntries() > 15000) { // спец. кат для рана 125-138
+            tempHist[y]->GetXaxis()->SetTitle("LY [p.e.]");
+            tempHist[y]->GetYaxis()->SetTitle("N");
+            TF1* gausFit = new TF1("gaus", "gaus", 15, 35);
+            tempHist[y]->Fit(gausFit, "QR+");
+            tempHist[y]->Draw();
+            tempHist[y]->Write();
+//            double pixel_mean = tempHist[y]->GetMean();
+//            double pixel_max = tempHist[y]->GetMaximum();
+            double pixel_mean = gausFit->GetParameter(1);
+            if (pixel_mean > 0 && pixel_mean < cut) {
+                hist->SetBinContent(y, pixel_mean);
+            }
+        }
+    }
+} // 1D
 
 XTalkHistogramManager::XTalkHistogramManager(unsigned int count) : HistogramManager(count){
     x_histogramsXTalkN_.reserve(count);
@@ -2132,20 +1763,20 @@ void XTalkHistogramManager::WriteHistograms(TDirectory* dirName){
         a->Write();
     }
 
-    TF1 *landauFit = new TF1("landauFit", "landau", 0, 1);
+//    TF1 *landauFit = new TF1("landauFit", "landau", 0, 1);
 
     auto average_XTalk_ = dirName->mkdir("average_XTalk_");
     average_XTalk_->cd();
 
-    averageXTalk_->Fit("landau", "r", " ", 0.02, 0.5);
+//    averageXTalk_->Fit("landau", "r", " ", 0.02, 0.5);
     averageXTalk_->Draw();
     averageXTalk_->Write();
 
-    averageXTalk_x_->Fit("landau", "r", " ", 0.03, 0.5);
+//    averageXTalk_x_->Fit("landau", "r", " ", 0.03, 0.5);
     averageXTalk_x_->Draw();
     averageXTalk_x_->Write();
 
-    averageXTalk_y_->Fit("landau", "r", " ", 0.02, 0.5);
+//    averageXTalk_y_->Fit("landau", "r", " ", 0.02, 0.5);
     averageXTalk_y_->Draw();
     averageXTalk_y_->Write();
 
@@ -2155,8 +1786,8 @@ void XTalkHistogramManager::WriteHistograms(TDirectory* dirName){
         auto gaus_layer_Y_N = Gaus_layer->mkdir(Form("gaus_cybe_%d_Y", cube));
         for (int x = 0; x < CUBES_SLICE_X; ++x) {
             for (int y = 0; y < CUBES_SLICE_Y; ++y) {
-                TF1* fit = new TF1("landau","landau",0, 0.3);
-                double pixelLY;
+//                TF1* fit = new TF1("landau","landau",0, 0.3); // переход от Ландау к Mean
+                double pixel_mean = 0.0;
                 if (pixelsDataXLY_cube_[cube][x][y].size() > 0) {
                     gaus_layer_X_N->cd();
                     auto tempHist_X =  new TH1F(Form("pixel_cube_%i_x-%i_y-%i_X",cube,x,y),Form("pixel_cube_%i_x-%i_y-%i_X", cube, x, y), XTALK_BINNING);
@@ -2164,13 +1795,15 @@ void XTalkHistogramManager::WriteHistograms(TDirectory* dirName){
                         tempHist_X->Fill(*it);
                     }
                     if (tempHist_X->GetEntries()>0) {
-                        tempHist_X->Fit(fit, "qr+");
+//                        tempHist_X->Fit(fit, "qr+");
+                        pixel_mean = tempHist_X->GetMean();
+                        // double pixel_mean_err = tempHist_X->GetMeanError(); // ошибка среднего
                         tempHist_X->Draw();
                         tempHist_X->Write();
                     }
-                    pixelLY = fit->GetParameter(1);
-                    if (pixelLY > 0 && pixelLY < 0.5) {
-                        x_histogramsLY_gaus_cube_.at(cube)->SetBinContent(x,y,pixelLY);
+//                    pixelLY = fit->GetParameter(1);
+                    if (pixel_mean >= 0 && pixel_mean < 0.5) {
+                        x_histogramsLY_gaus_cube_.at(cube)->SetBinContent(x,y,pixel_mean);
                     }
                     tempHist_X->Delete();
                 }
@@ -2182,21 +1815,383 @@ void XTalkHistogramManager::WriteHistograms(TDirectory* dirName){
                         tempHist_Y->Fill(*it);
                     }
                     if (tempHist_Y->GetEntries()>0) {
-                        tempHist_Y->Fit(fit, "qr+");
+//                        tempHist_Y->Fit(fit, "qr+");
                         tempHist_Y->Draw();
                         tempHist_Y->Write();
                     }
-                    pixelLY = fit->GetParameter(1);
-                    if (pixelLY > 0 && pixelLY < 0.5) {
-                        y_histogramsLY_gaus_cube_.at(cube)->SetBinContent(x,y,pixelLY);
+                    pixel_mean = tempHist_Y->GetMean();
+                    // double pixel_mean_err = tempHist_X->GetMeanError(); // ошибка среднего
+                    if (pixel_mean >= 0 && pixel_mean < 0.5) {
+                        y_histogramsLY_gaus_cube_.at(cube)->SetBinContent(x, y, pixel_mean);
                     }
                     tempHist_Y->Delete();
                 }
-                fit->Delete();
+//                fit->Delete();
             }
         }
         Gaus_layer->cd();
         x_histogramsLY_gaus_cube_.at(cube)->Write();
         y_histogramsLY_gaus_cube_.at(cube)->Write();
+    }
+}
+
+// новое, касательно 4 сторон
+XTalk4sideHistogramManager::XTalk4sideHistogramManager(unsigned int count) : HistogramManager(count){
+    histogramsXTalk_2D_up_ = std::make_unique<TH2F>("Average_XTalk_2D_Up", "Average_XTalk_2D_Up", CUBES_BINNING);
+    histogramsXTalk_2D_down_ = std::make_unique<TH2F>("Average_XTalk_2D_Down", "Average_XTalk_2D_Down", CUBES_BINNING);
+    histogramsXTalk_2D_right_ = std::make_unique<TH2F>("Average_XTalk_2D_Right", "Average_XTalk_2D_Right", CUBES_BINNING);
+    histogramsXTalk_2D_left_ = std::make_unique<TH2F>("Average_XTalk_2D_Left", "Average_XTalk_2D_Left", CUBES_BINNING);
+
+    averageXTalk_up_ = std::make_unique<TH1F>("Average_XTalk_Up", "Average_XTalk_Up", 200, 0 , 1);
+    averageXTalk_down_ = std::make_unique<TH1F>("Average_XTalk_Down", "Average_XTalk_Down", 200, 0 , 1);
+    averageXTalk_right_ = std::make_unique<TH1F>("Average_XTalk_Right", "Average_XTalk_Right", 200, 0 , 1);
+    averageXTalk_left_ = std::make_unique<TH1F>("Average_XTalk_Left", "Average_XTalk_Left", 200, 0 , 1);
+
+    dist_LY_XTalk_up_ = std::make_unique<TH1F>("LY_XTalk_Up", "LY_XTalk_Up", 2 * 150, 0 , 150);
+    dist_LY_XTalk_down_ = std::make_unique<TH1F>("LY_XTalk_Down", "LY_XTalk_Down", 2 * 150, 0 , 150);
+    dist_LY_XTalk_right_ = std::make_unique<TH1F>("LY_XTalk_Right", "LY_XTalk_Right", 2 * 150, 0 , 150);
+    dist_LY_XTalk_left_ = std::make_unique<TH1F>("LY_XTalk_Left", "LY_XTalk_Left", 2 * 150, 0 , 150);
+
+    dist_LY_up_ = std::make_unique<TH1F>("LY_Up", "LY_Up", 5000, 0 , 200);
+    dist_LY_down_ = std::make_unique<TH1F>("LY_Down", "LY_Down", 5000, 0 , 200);
+    dist_LY_right_ = std::make_unique<TH1F>("LY_Right", "LY_Right", 5000, 0 , 200);
+    dist_LY_left_ = std::make_unique<TH1F>("LY_Left", "LY_Left", 5000, 0 , 200);
+
+    pixelsAverageXTalk_up_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Up", "Pixel_Average_XTalk_Up", CUBES_BINNING_Y);
+    pixelsAverageXTalk_down_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Down", "Pixel_Average_XTalk_Down", CUBES_BINNING_Y);
+    pixelsAverageXTalk_right_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Right", "Pixel_Average_XTalk_Right", CUBES_BINNING_X);
+    pixelsAverageXTalk_left_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Left", "Pixel_Average_XTalk_Left", CUBES_BINNING_X);
+}
+
+void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D(const std::string& titleX, const std::string& titleY){
+    std::array<std::unique_ptr<TH1F>*, 4> histograms = {&averageXTalk_up_, &averageXTalk_down_, &averageXTalk_right_, &averageXTalk_left_};
+
+    for (auto* histPtr : histograms) {
+        if (histPtr && *histPtr) {
+            (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
+            (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_2(const std::string& titleX, const std::string& titleY) {
+    std::array<std::unique_ptr<TH1F>*, 4> histograms = {&pixelsAverageXTalk_right_, &pixelsAverageXTalk_left_, &pixelsAverageXTalk_up_, &pixelsAverageXTalk_down_};
+
+    for (auto* histPtr : histograms) {
+        if (histPtr && *histPtr) {
+            (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
+            (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_3(const std::string& titleX, const std::string& titleY) {
+    std::array<std::unique_ptr<TH1F>*, 8> histograms = {&dist_LY_XTalk_up_, &dist_LY_XTalk_down_, &dist_LY_XTalk_right_, &dist_LY_XTalk_left_, &dist_LY_up_, &dist_LY_down_, &dist_LY_right_, &dist_LY_left_};
+
+    for (auto* histPtr : histograms) {
+        if (histPtr && *histPtr) {
+            (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
+            (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_2D(const std::string &titleX, const std::string &titleY, const std::string &titleZ) {
+    std::array<std::unique_ptr<TH2F>*, 4> histograms = {&histogramsXTalk_2D_up_, &histogramsXTalk_2D_down_, &histogramsXTalk_2D_right_, &histogramsXTalk_2D_left_};
+
+    for (auto* histPtr : histograms) {
+        if (histPtr && *histPtr) {
+            (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
+            (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+            (*histPtr)->GetZaxis()->SetTitle(titleZ.c_str());
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_up(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_up_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_up_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_up_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_up_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_up_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_up_->GetBinContent(binX_2D, binY_2D);
+
+//    histogramsXTalk_2D_up_->Fill(x, y);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+//    histogramsXTalk_2D_up_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
+
+    averageXTalk_up_->Fill(value_XTalk);
+    dist_LY_XTalk_up_->Fill(value_LY_XTalk);
+    dist_LY_up_->Fill(value_LY);
+    pixelsData_up_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_down(double x, double y,double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_down_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_down_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_down_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_down_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_down_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_down_->GetBinContent(binX_2D, binY_2D);
+
+//    histogramsXTalk_2D_down_->Fill(x, y);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+//    histogramsXTalk_2D_down_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
+
+    averageXTalk_down_->Fill(value_XTalk);
+    dist_LY_XTalk_down_->Fill(value_LY_XTalk);
+    dist_LY_down_->Fill(value_LY);
+    pixelsData_down_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_right(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_right_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_right_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_right_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_right_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_right_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_right_->GetBinContent(binX_2D, binY_2D);
+
+//    histogramsXTalk_2D_right_->Fill(x, y);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+//    histogramsXTalk_2D_right_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
+
+    averageXTalk_right_->Fill(value_XTalk);
+    dist_LY_XTalk_right_->Fill(value_LY_XTalk);
+    dist_LY_right_->Fill(value_LY);
+    pixelsData_right_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_left(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_left_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_left_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_left_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_left_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_left_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_left_->GetBinContent(binX_2D, binY_2D);
+
+//    histogramsXTalk_2D_left_->Fill(x, y);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+//    histogramsXTalk_2D_left_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
+
+    averageXTalk_left_->Fill(value_XTalk);
+    dist_LY_XTalk_left_->Fill(value_LY_XTalk);
+    dist_LY_left_->Fill(value_LY);
+    pixelsData_left_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
+void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
+    auto average_XTalk_2D = dirName->mkdir("average_XTalk_2D");
+    average_XTalk_2D->cd();
+    histogramsXTalk_2D_up_->Draw();
+    histogramsXTalk_2D_up_->Write();
+
+    histogramsXTalk_2D_down_->Draw();
+    histogramsXTalk_2D_down_->Write();
+
+    histogramsXTalk_2D_right_->Draw();
+    histogramsXTalk_2D_right_->Write();
+
+    histogramsXTalk_2D_left_->Draw();
+    histogramsXTalk_2D_left_->Write();
+
+    auto average_XTalk_for_4_side = dirName->mkdir("average_XTalk_for_4_side");
+    average_XTalk_for_4_side->cd();
+
+//    averageXTalk_right_->Fit("landau", "r", " ", 0.02, 0.5);
+    averageXTalk_right_->Draw();
+    averageXTalk_right_->Write();
+
+//    averageXTalk_left_->Fit("landau", "r", " ", 0.03, 0.5);
+    averageXTalk_left_->Draw();
+    averageXTalk_left_->Write();
+
+//    averageXTalk_up_->Fit("landau", "r", " ", 0.02, 0.4);
+    averageXTalk_up_->Draw();
+    averageXTalk_up_->Write();
+
+//    averageXTalk_down_->Fit("landau", "r", " ", 0.02, 0.4);
+    averageXTalk_down_->Draw();
+    averageXTalk_down_->Write();
+
+    auto LY_XTalk_for_4_side = dirName->mkdir("LY_XTalk_for_4_side");
+    LY_XTalk_for_4_side->cd();
+
+    TF1* fit_gauss = new TF1("gaus", "gaus", 15, 40); // новые каты на световыход
+
+    dist_LY_XTalk_up_->Draw();
+    dist_LY_XTalk_up_->Write();
+
+    dist_LY_XTalk_down_->Draw();
+    dist_LY_XTalk_down_->Write();
+
+    dist_LY_XTalk_right_->Draw();
+    dist_LY_XTalk_right_->Write();
+
+    dist_LY_XTalk_left_->Draw();
+    dist_LY_XTalk_left_->Write();
+
+    auto LY_for_4_side = dirName->mkdir("LY_for_4_side");
+    LY_for_4_side->cd();
+
+    dist_LY_up_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_up_->Draw();
+    dist_LY_up_->Write();
+
+    dist_LY_down_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_down_->Draw();
+    dist_LY_down_->Write();
+
+    dist_LY_right_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_right_->Draw();
+    dist_LY_right_->Write();
+
+//    dist_LY_left_->Fit("landau", "r", " ", 1, 7);
+    dist_LY_left_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_left_->Draw();
+    dist_LY_left_->Write();
+
+    auto all_2D = dirName->mkdir(Form("all_2D"));
+    auto right_2D = all_2D->mkdir(Form("right_2D"));
+    auto left_2D = all_2D->mkdir(Form("left_2D"));
+    auto up_2D = all_2D->mkdir(Form("up_2D"));
+    auto down_2D = all_2D->mkdir(Form("down_2D"));
+
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            if (!pixelsData_right_LY_cube_[x][y].empty()) {
+                this->FillPixelData(right_2D, &pixelsData_right_LY_cube_[x][y], histogramsXTalk_2D_right_.get(),
+                                    Form("pixel_%i_%i_right", x, y), x, y,0.5);
+            }
+            if (!pixelsData_left_LY_cube_[x][y].empty()) {
+                this->FillPixelData(left_2D, &pixelsData_left_LY_cube_[x][y], histogramsXTalk_2D_left_.get(),
+                                    Form("pixel_%i_%i_left", x, y), x, y,0.5);
+            }
+            if (!pixelsData_up_LY_cube_[x][y].empty()) {
+                this->FillPixelData(up_2D, &pixelsData_up_LY_cube_[x][y], histogramsXTalk_2D_up_.get(),
+                                    Form("pixel_%i_%i_up", x, y), x, y,0.5);
+            }
+            if (!pixelsData_down_LY_cube_[x][y].empty()) {
+                this->FillPixelData(down_2D, &pixelsData_down_LY_cube_[x][y], histogramsXTalk_2D_down_.get(),
+                                    Form("pixel_%i_%i_down", x, y), x, y, 0.5);
+            }
+        }
+    }
+    all_2D->cd();
+    histogramsXTalk_2D_right_->Write();
+    histogramsXTalk_2D_left_->Write();
+    histogramsXTalk_2D_up_->Write();
+    histogramsXTalk_2D_down_->Write();
+
+    auto all_1D = dirName->mkdir(Form("all_1D"));
+    auto right_1D = all_1D->mkdir(Form("right_1D"));
+    auto left_1D = all_1D->mkdir(Form("left_1D"));
+    auto up_1D = all_1D->mkdir(Form("up_1D"));
+    auto down_1D = all_1D->mkdir(Form("down_1D"));
+
+    this->FillPixelAverageData_Left_Right(right_1D, pixelsData_right_LY_cube_, pixelsAverageXTalk_right_.get(),
+                                          "pixel_average_right", 0.5);
+    this->FillPixelAverageData_Left_Right(left_1D, pixelsData_left_LY_cube_, pixelsAverageXTalk_left_.get(),
+                                          "pixel_average_left", 0.5);
+    this->FillPixelAverageData_UP_Down(up_1D, pixelsData_up_LY_cube_, pixelsAverageXTalk_up_.get(),
+                                       "pixel_average_up", 0.5);
+    this->FillPixelAverageData_UP_Down(down_1D, pixelsData_down_LY_cube_, pixelsAverageXTalk_down_.get(),
+                                       "pixel_average_down", 0.5);
+
+    all_1D->cd();
+    pixelsAverageXTalk_right_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_right_->Write();
+    pixelsAverageXTalk_left_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_left_->Write();
+    pixelsAverageXTalk_up_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_up_->Write();
+    pixelsAverageXTalk_down_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_down_->Write();
+}
+
+void XTalk4sideHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* data, TH2F* hist, const char* title, const int x, const int y, const double cut) {
+    dir->cd();
+    auto tempHist =  new TH1F(title, title, XTALK_BINNING);
+    for (const double & it : *data) {
+        tempHist->Fill(it);
+    }
+
+    if (tempHist->GetEntries() > 25000) { // спец. кат
+        double pixel_mean = tempHist->GetMean();
+        tempHist->Draw();
+        tempHist->GetXaxis()->SetTitle("Crosstalk");
+        tempHist->GetYaxis()->SetTitle("N");
+        tempHist->Write();
+        if ((pixel_mean == 0 || pixel_mean > 0) && pixel_mean < cut) {
+            hist->SetBinContent(x, y, pixel_mean);
+        }
+    }
+    tempHist->Delete();
+}
+
+void XTalk4sideHistogramManager::FillPixelAverageData_Left_Right(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+    dir->cd();
+    std::unique_ptr<TH1F> tempHist[CUBES_SLICE_X];
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        std::string name = title + '_' + std::to_string(x);
+        tempHist[x] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), XTALK_BINNING);
+    }
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            for (const auto it : data[x][y]) {
+                tempHist[x]->Fill(it);
+            }
+        }
+
+        if (tempHist[x]->GetEntries() > 25000) { // спец. кат
+            tempHist[x]->Draw();
+            tempHist[x]->GetXaxis()->SetTitle("Crosstalk");
+            tempHist[x]->GetYaxis()->SetTitle("N");
+            tempHist[x]->Write();
+
+            double pixel_mean = tempHist[x]->GetMean();
+            if ((pixel_mean == 0 ||  pixel_mean > 0) && pixel_mean < cut) {
+                hist->SetBinContent(x, pixel_mean);
+            }
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::FillPixelAverageData_UP_Down(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+    dir->cd();
+    std::unique_ptr<TH1F> tempHist[CUBES_SLICE_Y];
+    for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+        std::string name = title + '_' + std::to_string(y);
+        tempHist[y] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), XTALK_BINNING);
+    }
+    for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+        for (int x = 0; x < CUBES_SLICE_X; ++x) {
+            for (const auto it : data[x][y]) {
+                tempHist[y]->Fill(it);
+            }
+        }
+        if ( tempHist[y]->GetEntries() > 25000) { // спец. кат
+            tempHist[y]->Draw();
+            tempHist[y]->GetXaxis()->SetTitle("Crosstalk");
+            tempHist[y]->GetYaxis()->SetTitle("N");
+            tempHist[y]->Write();
+
+            double pixel_mean = tempHist[y]->GetMean();
+            if (pixel_mean > 0 && pixel_mean < cut) {
+                hist->SetBinContent(y, pixel_mean);
+            }
+        }
     }
 }
