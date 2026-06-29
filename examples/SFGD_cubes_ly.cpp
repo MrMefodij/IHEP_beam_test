@@ -62,10 +62,14 @@ int main( int argc, char **argv ) {
                     // Если канал не существует (-1)
                     if (x < 0 || y < 0 || z < 0) continue;
 
+                    if (x < 50 && y < 50 && z < 50) { // отсечь доп. каналы
+
                     if (channels_map->find(x) == channels_map->end()) {
                         std::cerr << "Warning: Channel " << x << " not in geometry map!" << std::endl;
                         continue;
                     }
+//                    std::cout << "Cube: " << cube << " x: " << x << " y: "
+//                                                  << y << " z: " << z << std::endl;
 
                     double z_position = channels_map->at(x)._cube_z;
 
@@ -88,8 +92,7 @@ int main( int argc, char **argv ) {
                     double x_position = hit->_Ax * (CUBES_POSITION - 1 + z_position) + hit->_Bx;
                     double y_position = hit->_Ay * (CUBES_POSITION - 1 + z_position) + hit->_By;
 
-                    if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() &&
-                        zt != hit->_channelsData.end()) {
+                    if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() && zt != hit->_channelsData.end()) {
                         if (x_position >= x_min && x_position <= x_max + 0.5 && y_position >= y_min &&
                             y_position <= y_max + 0.5) {
                             if (xt->_chargePE_Amplitude > 1 && yt->_chargePE_Amplitude > 1 && zt->_amplitude > 1 &&
@@ -134,6 +137,7 @@ int main( int argc, char **argv ) {
                                     hists.SetFiberLY_layer(xt->_channel_id, yt->_channel_id, x_position, y_position,
                                                            x_ly,
                                                            y_ly);
+                                    }
                                 }
                             }
                         }

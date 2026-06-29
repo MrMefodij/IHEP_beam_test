@@ -17,3 +17,9 @@ TARGET_LINK_LIBRARIES(xTalk                                     Gatchina_src Pro
 
 ADD_EXECUTABLE(xTalk_all_side                                   SFGD_XTalk_all_side.cpp)
 TARGET_LINK_LIBRARIES(xTalk_all_side                            Gatchina_src PrototypeHitStructure)
+
+ADD_EXECUTABLE(xTalk_all_side_avr                               SFGD_XTalk_all_side_average.cpp)
+TARGET_LINK_LIBRARIES(xTalk_all_side_avr                        Gatchina_src PrototypeHitStructure)
+
+ADD_EXECUTABLE(fiber_ly                                         SFGD_fiber_ly.cpp)
+TARGET_LINK_LIBRARIES(fiber_ly                                  Gatchina_src PrototypeHitStructure)

@@ -52,7 +52,7 @@ namespace PNPI{
                     hit._chargePE_Integral = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / calibrationResultsI->at(ch)._gain + 1;
 //                    hit._chargePE_Integral_XTalk = (entry->_sipmData.at(ch).I - calibrationResultsI->at(ch)._peak0) / (calibrationResultsI->at(ch)._gain * calibrationResultsI->at(ch)._xTalk) + 1;
                 } else {
-                    std::cerr << "Сhannel ID: " << ch << " Нет калибровки I " << ch << std::endl;
+//                    std::cerr << "Сhannel ID: " << ch << " Нет калибровки I " << ch << std::endl;
                     hit._chargePE_Integral = 0;
                 }
                 if (calibrationResultsA != nullptr){
@@ -77,6 +77,7 @@ namespace PNPI{
     }
 
     void PnpiRootFile::Init(){
+        if (fileInput_ != nullptr) return;
         fileInput_ = new TFile(fileName_.c_str());
         if (!fileInput_->IsOpen()) {
             std::cerr << "Can not open file " << fileName_ << std::endl;
@@ -92,29 +93,20 @@ namespace PNPI{
                 if (allEvents_->GetBranch("Track")) {
                     allEvents_->SetBranchAddress("Track", &entry_._trackParam);
                 }
-
-                std::ostringstream sChNum;
-                std::string sCh;
                 for (int ih = 0; ih <= CHANNELS_NUMBER; ++ih) {
-                    sChNum.str("");
+                    std::ostringstream sChNum;
                     sChNum << std::setw(2) << std::setfill('0') << ih;
-                    sCh = "SiPM_55_" + sChNum.str();
-                    if (allEvents_->GetBranch((sCh).c_str())) {
-                        entry_._sipmData[ih] = {};
+                    std::string sCh = "SiPM_55_" + sChNum.str();
+
+                    TBranch* br = allEvents_->GetBranch(sCh.c_str());
+                    if (br) {
                         availableChannels_.insert(ih);
-                        allEvents_->SetBranchAddress((sCh).c_str(), &entry_._sipmData[ih]);
+                        allEvents_->SetBranchAddress(sCh.c_str(), &entry_._sipmData[ih]);
+                        allEventsBeamTrig_[ih] = allEvents_;
                     }
-                }
-
-                for (int ih = 0; ih <= CHANNELS_NUMBER; ++ih) {
-                    sChNum.str("");
-                    sChNum << std::setw(2) << std::setfill('0') << ih;
-                    sCh = "SiPM_55_" + sChNum.str();
-                    allEventsBeamTrig_[ih] = (TTree*) (fileInput_->Get(keyName));
-                    if (allEventsBeamTrig_[ih]->GetBranch((sCh).c_str())) {
-                        beamDataTrig_[ih] = {};
-                        allEventsBeamTrig_[ih]->SetBranchAddress((sCh).c_str(), &beamDataTrig_[ih]);
-                    }
+                    /* убрала второй цикл чтения веток, allEventsBeamTrig_ переиспользует указатель на allEvents_,
+                     * адрес данных привязан к общему хранилищу entry_._sipmData[ih].
+                     * карта beamDataTrig_  не инициализируется и пуста, можно удалить? */
                 }
             }
             else {

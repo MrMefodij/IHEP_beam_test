@@ -96,7 +96,14 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
         double maxContent = hist->GetMaximum();
         double entries = hist->GetEntries();
 
-        currentThreshold = maxContent * 0.18; // спец. кат по количеству событий, может быть и 20
+        currentThreshold = maxContent * 0.15; // спец. кат по количеству событий
+        // для ранов:
+        //  88 - 92
+        //  96 - 110        0.17
+        // 125 - 128        0.17
+        // 129 - 143        0.18
+        // 150 - 168        0.15, 0.19 даёт много размеров около 8 - 8.5 см,
+        // 188 - 193        0.19
 
         // Устанавливаем начальные значения для границ
         double minX = std::numeric_limits<double>::max();
@@ -1233,8 +1240,8 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
 
 void LyHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* data, TF1* fit, TH2F* hist, const char* title, const int x, const int y, const double cut) {
     dir->cd();
-    const auto tempHist =  new TH1F(title, title,GAUS_BINNING);
-    for (const double & it : *data) {
+    const auto tempHist = new TH1F(title, title, GAUS_BINNING);
+    for (const double &it: *data) {
         tempHist->Fill(it);
     }
     if (tempHist->GetEntries() > 40) {
@@ -1242,7 +1249,7 @@ void LyHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* dat
 //        int nFound = tSpectrum->Search(tempHist,10,"nobackground new",0.1);
 //        int nFound = tSpectrum->Search(tempHist, 20, "nobackground new", 0.4);
         int nFound = tSpectrum->Search(tempHist, 2, "nobackground new", 0.05);
-        if(nFound > 0) {
+        if (nFound > 0) {
             double *xpeaks = tSpectrum->GetPositionX();
 
             int bestPeakIndex = -1;
@@ -1261,17 +1268,17 @@ void LyHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* dat
             if (bestPeakIndex != -1) {
                 double x_best = xpeaks[bestPeakIndex];
 
-                if (x_best < 15.0) {
+                if (x_best > 0 && x_best <= 3.0) { // пока спорно??
+                    tempHist->Fit(fit, "qrl+", "", x_best - 0.5,x_best + 0.5); // спец. кат для очень малых световыходов
+                } else if (x_best > 3.0 && x_best <= 15.0) {
                     tempHist->Fit(fit, "qrl+", "", x_best - 5.0, x_best + 5.0); // когда частица попала в волокно
-                } else {
-                    if (tempHist->GetEntries() > 50) {
-                        tempHist->Fit(fit, "qrl+", "", x_best - 15.0, x_best + 15.0);
-                    } else if (tempHist->GetEntries() < 50){
-                        tempHist->Fit(fit, "qrl+", "", x_best - 10.0, x_best + 10.0); // немного подстраиваюсь под узкие пики, чтобы фит не слетал
-                    }
-                }
+                } else if (x_best > 15.0) {
+                    tempHist->Fit(fit, "qrl+", "", x_best - 12.0,
+                                  x_best + 12.0); // спец. кат, было 15 для большего световыхода
             }
         }
+    }
+
 
         tempHist->Draw();
         tempHist->GetXaxis()->SetTitle("LY [p.e.]");
@@ -1412,7 +1419,7 @@ void LyHistogramManager::FillPixelFiberData(TDirectory* dir, std::vector<double>
         it < 18 ? ++peak1_count : ++peak2_count;
     }
 
-    if (tempHist->GetEntries() > 15000) { // спец. кат для рана 125-138
+    if (tempHist->GetEntries() > 500) { // спец. кат, раньше был 15000, далее был 5000
 
         std::unique_ptr<TSpectrum> tSpectrum = std::make_unique<TSpectrum>(15);
         int nFound = tSpectrum->Search(tempHist, 10, "nobackground new", 0.1);
@@ -1465,7 +1472,7 @@ void LyHistogramManager::FillPixelAverageData_X(TDirectory* dir, const std::vect
             }
         }
 
-        if (tempHist[x]->GetEntries() > 15000) { // спец. кат для рана 125-138
+        if (tempHist[x]->GetEntries() > 500) { // спец. кат
             tempHist[x]->GetXaxis()->SetTitle("LY [p.e.]");
             tempHist[x]->GetYaxis()->SetTitle("N");
             TF1* gausFit = new TF1("gaus", "gaus", 15, 35);
@@ -1494,7 +1501,7 @@ void LyHistogramManager::FillPixelAverageData_Y(TDirectory* dir, const std::vect
                 tempHist[y]->Fill(it);
             }
         }
-        if ( tempHist[y]->GetEntries() > 15000) { // спец. кат для рана 125-138
+        if ( tempHist[y]->GetEntries() > 500) { // спец. кат
             tempHist[y]->GetXaxis()->SetTitle("LY [p.e.]");
             tempHist[y]->GetYaxis()->SetTitle("N");
             TF1* gausFit = new TF1("gaus", "gaus", 15, 35);
@@ -1841,30 +1848,40 @@ XTalk4sideHistogramManager::XTalk4sideHistogramManager(unsigned int count) : His
     histogramsXTalk_2D_down_ = std::make_unique<TH2F>("Average_XTalk_2D_Down", "Average_XTalk_2D_Down", CUBES_BINNING);
     histogramsXTalk_2D_right_ = std::make_unique<TH2F>("Average_XTalk_2D_Right", "Average_XTalk_2D_Right", CUBES_BINNING);
     histogramsXTalk_2D_left_ = std::make_unique<TH2F>("Average_XTalk_2D_Left", "Average_XTalk_2D_Left", CUBES_BINNING);
+    histogramsXTalk_2D_horiz_ = std::make_unique<TH2F>("Average_XTalk_2D_Horizontal", "Average_XTalk_2D_Horizontal", CUBES_BINNING);
+    histogramsXTalk_2D_vert_ = std::make_unique<TH2F>("Average_XTalk_2D_Vertical", "Average_XTalk_2D_Vertical", CUBES_BINNING);
 
-    averageXTalk_up_ = std::make_unique<TH1F>("Average_XTalk_Up", "Average_XTalk_Up", 200, 0 , 1);
-    averageXTalk_down_ = std::make_unique<TH1F>("Average_XTalk_Down", "Average_XTalk_Down", 200, 0 , 1);
-    averageXTalk_right_ = std::make_unique<TH1F>("Average_XTalk_Right", "Average_XTalk_Right", 200, 0 , 1);
-    averageXTalk_left_ = std::make_unique<TH1F>("Average_XTalk_Left", "Average_XTalk_Left", 200, 0 , 1);
+    averageXTalk_up_ = std::make_unique<TH1F>("Average_XTalk_Up", "Average_XTalk_Up", 200, 0, 1);
+    averageXTalk_down_ = std::make_unique<TH1F>("Average_XTalk_Down", "Average_XTalk_Down", 200, 0, 1);
+    averageXTalk_right_ = std::make_unique<TH1F>("Average_XTalk_Right", "Average_XTalk_Right", 200, 0, 1);
+    averageXTalk_left_ = std::make_unique<TH1F>("Average_XTalk_Left", "Average_XTalk_Left", 200, 0, 1);
+    averageXTalk_horiz_ = std::make_unique<TH1F>("Average_XTalk_Horizontal", "Average_XTalk_Horizontal", 200, 0, 1);
+    averageXTalk_vert_ = std::make_unique<TH1F>("Average_XTalk_Vertical", "Average_XTalk_Vertical", 200, 0, 1);
 
-    dist_LY_XTalk_up_ = std::make_unique<TH1F>("LY_XTalk_Up", "LY_XTalk_Up", 2 * 150, 0 , 150);
-    dist_LY_XTalk_down_ = std::make_unique<TH1F>("LY_XTalk_Down", "LY_XTalk_Down", 2 * 150, 0 , 150);
-    dist_LY_XTalk_right_ = std::make_unique<TH1F>("LY_XTalk_Right", "LY_XTalk_Right", 2 * 150, 0 , 150);
-    dist_LY_XTalk_left_ = std::make_unique<TH1F>("LY_XTalk_Left", "LY_XTalk_Left", 2 * 150, 0 , 150);
+    dist_LY_XTalk_up_ = std::make_unique<TH1F>("LY_XTalk_Up", "LY_XTalk_Up", 2 * 150, 0, 150);
+    dist_LY_XTalk_down_ = std::make_unique<TH1F>("LY_XTalk_Down", "LY_XTalk_Down", 2 * 150, 0, 150);
+    dist_LY_XTalk_right_ = std::make_unique<TH1F>("LY_XTalk_Right", "LY_XTalk_Right", 2 * 150, 0, 150);
+    dist_LY_XTalk_left_ = std::make_unique<TH1F>("LY_XTalk_Left", "LY_XTalk_Left", 2 * 150, 0, 150);
+    dist_LY_XTalk_horiz_ = std::make_unique<TH1F>("LY_XTalk_Horizontal", "LY_XTalk_Horizontal", 2 * 150, 0, 150);
+    dist_LY_XTalk_vert_ = std::make_unique<TH1F>("LY_XTalk_Vertical", "LY_XTalk_Vertical", 2 * 150, 0, 150);
 
-    dist_LY_up_ = std::make_unique<TH1F>("LY_Up", "LY_Up", 5000, 0 , 200);
-    dist_LY_down_ = std::make_unique<TH1F>("LY_Down", "LY_Down", 5000, 0 , 200);
-    dist_LY_right_ = std::make_unique<TH1F>("LY_Right", "LY_Right", 5000, 0 , 200);
-    dist_LY_left_ = std::make_unique<TH1F>("LY_Left", "LY_Left", 5000, 0 , 200);
+    dist_LY_up_ = std::make_unique<TH1F>("LY_Up", "LY_Up", 5000, 0, 200);
+    dist_LY_down_ = std::make_unique<TH1F>("LY_Down", "LY_Down", 5000, 0, 200);
+    dist_LY_right_ = std::make_unique<TH1F>("LY_Right", "LY_Right", 5000, 0, 200);
+    dist_LY_left_ = std::make_unique<TH1F>("LY_Left", "LY_Left", 5000, 0, 200);
+    dist_LY_horiz_ = std::make_unique<TH1F>("LY_Horizontal", "LY_Horizontal", 5000, 0, 200);
+    dist_LY_vert_ = std::make_unique<TH1F>("LY_Vertical", "LY_Vertical", 5000, 0, 200);
 
     pixelsAverageXTalk_up_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Up", "Pixel_Average_XTalk_Up", CUBES_BINNING_Y);
     pixelsAverageXTalk_down_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Down", "Pixel_Average_XTalk_Down", CUBES_BINNING_Y);
     pixelsAverageXTalk_right_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Right", "Pixel_Average_XTalk_Right", CUBES_BINNING_X);
     pixelsAverageXTalk_left_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Left", "Pixel_Average_XTalk_Left", CUBES_BINNING_X);
+    pixelsAverageXTalk_horiz_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Horizontal", "Pixel_Average_XTalk_Horizontal", CUBES_BINNING_X);
+    pixelsAverageXTalk_vert_ = std::make_unique<TH1F>("Pixel_Average_XTalk_Vertical", "Pixel_Average_XTalk_Vertical", CUBES_BINNING_Y);
 }
 
 void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D(const std::string& titleX, const std::string& titleY){
-    std::array<std::unique_ptr<TH1F>*, 4> histograms = {&averageXTalk_up_, &averageXTalk_down_, &averageXTalk_right_, &averageXTalk_left_};
+    std::array<std::unique_ptr<TH1F>*, 6> histograms = {&averageXTalk_up_, &averageXTalk_down_, &averageXTalk_right_, &averageXTalk_left_, &averageXTalk_horiz_, &averageXTalk_vert_};
 
     for (auto* histPtr : histograms) {
         if (histPtr && *histPtr) {
@@ -1886,7 +1903,7 @@ void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_2(const std::string&
 }
 
 void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_3(const std::string& titleX, const std::string& titleY) {
-    std::array<std::unique_ptr<TH1F>*, 8> histograms = {&dist_LY_XTalk_up_, &dist_LY_XTalk_down_, &dist_LY_XTalk_right_, &dist_LY_XTalk_left_, &dist_LY_up_, &dist_LY_down_, &dist_LY_right_, &dist_LY_left_};
+    std::array<std::unique_ptr<TH1F>*, 11> histograms = {&dist_LY_XTalk_up_, &dist_LY_XTalk_down_, &dist_LY_XTalk_right_, &dist_LY_XTalk_left_, &dist_LY_XTalk_horiz_, &dist_LY_XTalk_vert_, &dist_LY_up_, &dist_LY_down_, &dist_LY_right_, &dist_LY_left_, &dist_LY_horiz_};
 
     for (auto* histPtr : histograms) {
         if (histPtr && *histPtr) {
@@ -1897,7 +1914,7 @@ void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_3(const std::string&
 }
 
 void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_2D(const std::string &titleX, const std::string &titleY, const std::string &titleZ) {
-    std::array<std::unique_ptr<TH2F>*, 4> histograms = {&histogramsXTalk_2D_up_, &histogramsXTalk_2D_down_, &histogramsXTalk_2D_right_, &histogramsXTalk_2D_left_};
+    std::array<std::unique_ptr<TH2F>*, 6> histograms = {&histogramsXTalk_2D_up_, &histogramsXTalk_2D_down_, &histogramsXTalk_2D_right_, &histogramsXTalk_2D_left_, &histogramsXTalk_2D_horiz_, &histogramsXTalk_2D_vert_};
 
     for (auto* histPtr : histograms) {
         if (histPtr && *histPtr) {
@@ -1992,6 +2009,42 @@ void XTalk4sideHistogramManager::SetBinContentXTalk4side_left(double x, double y
     pixelsData_left_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
 }
 
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_horiz(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_horiz_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_horiz_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_horiz_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_horiz_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_horiz_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_horiz_->GetBinContent(binX_2D, binY_2D);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+
+    averageXTalk_horiz_->Fill(value_XTalk);
+    dist_LY_XTalk_horiz_->Fill(value_LY_XTalk);
+    dist_LY_horiz_->Fill(value_LY);
+    pixelsData_horiz_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_vert(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+    //---------2D----------//
+    int x_binXly_2D = histogramsXTalk_2D_vert_->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_vert_->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_vert_->GetBinContent(x_binXly_2D, y_binXly_2D);
+
+    int binX_2D = histogramsXTalk_2D_vert_->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_vert_->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_vert_->GetBinContent(binX_2D, binY_2D);
+
+    double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
+
+    averageXTalk_vert_->Fill(value_XTalk);
+    dist_LY_XTalk_vert_->Fill(value_LY_XTalk);
+    dist_LY_vert_->Fill(value_LY);
+    pixelsData_vert_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
+}
+
 void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     auto average_XTalk_2D = dirName->mkdir("average_XTalk_2D");
     average_XTalk_2D->cd();
@@ -2006,6 +2059,12 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
 
     histogramsXTalk_2D_left_->Draw();
     histogramsXTalk_2D_left_->Write();
+
+    histogramsXTalk_2D_horiz_->Draw();
+    histogramsXTalk_2D_horiz_->Write();
+
+    histogramsXTalk_2D_vert_->Draw();
+    histogramsXTalk_2D_vert_->Write();
 
     auto average_XTalk_for_4_side = dirName->mkdir("average_XTalk_for_4_side");
     average_XTalk_for_4_side->cd();
@@ -2026,6 +2085,12 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     averageXTalk_down_->Draw();
     averageXTalk_down_->Write();
 
+    averageXTalk_horiz_->Draw();
+    averageXTalk_horiz_->Write();
+
+    averageXTalk_vert_->Draw();
+    averageXTalk_vert_->Write();
+
     auto LY_XTalk_for_4_side = dirName->mkdir("LY_XTalk_for_4_side");
     LY_XTalk_for_4_side->cd();
 
@@ -2042,6 +2107,12 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
 
     dist_LY_XTalk_left_->Draw();
     dist_LY_XTalk_left_->Write();
+
+    dist_LY_XTalk_horiz_->Draw();
+    dist_LY_XTalk_horiz_->Write();
+
+    dist_LY_XTalk_vert_->Draw();
+    dist_LY_XTalk_vert_->Write();
 
     auto LY_for_4_side = dirName->mkdir("LY_for_4_side");
     LY_for_4_side->cd();
@@ -2063,11 +2134,21 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     dist_LY_left_->Draw();
     dist_LY_left_->Write();
 
+    dist_LY_horiz_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_horiz_->Draw();
+    dist_LY_horiz_->Write();
+
+    dist_LY_vert_->Fit( fit_gauss, "qr", " ", 15, 35);
+    dist_LY_vert_->Draw();
+    dist_LY_vert_->Write();
+
     auto all_2D = dirName->mkdir(Form("all_2D"));
     auto right_2D = all_2D->mkdir(Form("right_2D"));
     auto left_2D = all_2D->mkdir(Form("left_2D"));
     auto up_2D = all_2D->mkdir(Form("up_2D"));
     auto down_2D = all_2D->mkdir(Form("down_2D"));
+    auto horiz_2D = all_2D->mkdir(Form("horiz_2D"));
+    auto vert_2D = all_2D->mkdir(Form("vert_2D"));
 
     for (int x = 0; x < CUBES_SLICE_X; ++x) {
         for (int y = 0; y < CUBES_SLICE_Y; ++y) {
@@ -2087,6 +2168,14 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
                 this->FillPixelData(down_2D, &pixelsData_down_LY_cube_[x][y], histogramsXTalk_2D_down_.get(),
                                     Form("pixel_%i_%i_down", x, y), x, y, 0.5);
             }
+            if (!pixelsData_horiz_LY_cube_[x][y].empty()) {
+                this->FillPixelData(horiz_2D, &pixelsData_horiz_LY_cube_[x][y], histogramsXTalk_2D_horiz_.get(),
+                                    Form("pixel_%i_%i_horiz", x, y), x, y, 0.5);
+            }
+            if (!pixelsData_vert_LY_cube_[x][y].empty()) {
+                this->FillPixelData(horiz_2D, &pixelsData_vert_LY_cube_[x][y], histogramsXTalk_2D_vert_.get(),
+                                    Form("pixel_%i_%i_vert", x, y), x, y, 0.5);
+            }
         }
     }
     all_2D->cd();
@@ -2094,21 +2183,30 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     histogramsXTalk_2D_left_->Write();
     histogramsXTalk_2D_up_->Write();
     histogramsXTalk_2D_down_->Write();
+    histogramsXTalk_2D_horiz_->Write();
+    histogramsXTalk_2D_vert_->Write();
 
     auto all_1D = dirName->mkdir(Form("all_1D"));
     auto right_1D = all_1D->mkdir(Form("right_1D"));
     auto left_1D = all_1D->mkdir(Form("left_1D"));
     auto up_1D = all_1D->mkdir(Form("up_1D"));
     auto down_1D = all_1D->mkdir(Form("down_1D"));
+    auto horiz_1D = all_1D->mkdir(Form("horiz_1D"));
+    auto vert_1D = all_1D->mkdir(Form("vert_1D"));
 
     this->FillPixelAverageData_Left_Right(right_1D, pixelsData_right_LY_cube_, pixelsAverageXTalk_right_.get(),
                                           "pixel_average_right", 0.5);
     this->FillPixelAverageData_Left_Right(left_1D, pixelsData_left_LY_cube_, pixelsAverageXTalk_left_.get(),
                                           "pixel_average_left", 0.5);
-    this->FillPixelAverageData_UP_Down(up_1D, pixelsData_up_LY_cube_, pixelsAverageXTalk_up_.get(),
+    this->FillPixelAverageData_Up_Down(up_1D, pixelsData_up_LY_cube_, pixelsAverageXTalk_up_.get(),
                                        "pixel_average_up", 0.5);
-    this->FillPixelAverageData_UP_Down(down_1D, pixelsData_down_LY_cube_, pixelsAverageXTalk_down_.get(),
+    this->FillPixelAverageData_Up_Down(down_1D, pixelsData_down_LY_cube_, pixelsAverageXTalk_down_.get(),
                                        "pixel_average_down", 0.5);
+
+    this->FillPixelAverageData_Horiz(horiz_1D, pixelsData_horiz_LY_cube_, pixelsAverageXTalk_horiz_.get(),
+                                       "pixel_average_horiz", 0.5);
+    this->FillPixelAverageData_Vert(vert_1D, pixelsData_vert_LY_cube_, pixelsAverageXTalk_vert_.get(),
+                                     "pixel_average_vert", 0.5);
 
     all_1D->cd();
     pixelsAverageXTalk_right_->GetYaxis()->SetRangeUser(0, 0.1);
@@ -2119,6 +2217,10 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     pixelsAverageXTalk_up_->Write();
     pixelsAverageXTalk_down_->GetYaxis()->SetRangeUser(0, 0.1);
     pixelsAverageXTalk_down_->Write();
+    pixelsAverageXTalk_horiz_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_horiz_->Write();
+    pixelsAverageXTalk_vert_->GetYaxis()->SetRangeUser(0, 0.1);
+    pixelsAverageXTalk_vert_->Write();
 }
 
 void XTalk4sideHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* data, TH2F* hist, const char* title, const int x, const int y, const double cut) {
@@ -2128,7 +2230,7 @@ void XTalk4sideHistogramManager::FillPixelData(TDirectory* dir, std::vector<doub
         tempHist->Fill(it);
     }
 
-    if (tempHist->GetEntries() > 25000) { // спец. кат
+    if (tempHist->GetEntries() > 500) { // спец. кат, было 25000 для рана 125-128
         double pixel_mean = tempHist->GetMean();
         tempHist->Draw();
         tempHist->GetXaxis()->SetTitle("Crosstalk");
@@ -2155,7 +2257,7 @@ void XTalk4sideHistogramManager::FillPixelAverageData_Left_Right(TDirectory* dir
             }
         }
 
-        if (tempHist[x]->GetEntries() > 25000) { // спец. кат
+        if (tempHist[x]->GetEntries() > 500) { // спец. кат
             tempHist[x]->Draw();
             tempHist[x]->GetXaxis()->SetTitle("Crosstalk");
             tempHist[x]->GetYaxis()->SetTitle("N");
@@ -2169,7 +2271,7 @@ void XTalk4sideHistogramManager::FillPixelAverageData_Left_Right(TDirectory* dir
     }
 }
 
-void XTalk4sideHistogramManager::FillPixelAverageData_UP_Down(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+void XTalk4sideHistogramManager::FillPixelAverageData_Up_Down(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
     dir->cd();
     std::unique_ptr<TH1F> tempHist[CUBES_SLICE_Y];
     for (int y = 0; y < CUBES_SLICE_Y; ++y) {
@@ -2182,7 +2284,7 @@ void XTalk4sideHistogramManager::FillPixelAverageData_UP_Down(TDirectory* dir, c
                 tempHist[y]->Fill(it);
             }
         }
-        if ( tempHist[y]->GetEntries() > 25000) { // спец. кат
+        if ( tempHist[y]->GetEntries() > 500) { // спец. кат
             tempHist[y]->Draw();
             tempHist[y]->GetXaxis()->SetTitle("Crosstalk");
             tempHist[y]->GetYaxis()->SetTitle("N");
@@ -2195,3 +2297,58 @@ void XTalk4sideHistogramManager::FillPixelAverageData_UP_Down(TDirectory* dir, c
         }
     }
 }
+
+void XTalk4sideHistogramManager::FillPixelAverageData_Horiz(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+    dir->cd();
+    std::unique_ptr<TH1F> tempHist[CUBES_SLICE_X];
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        std::string name = title + '_' + std::to_string(x);
+        tempHist[x] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), XTALK_BINNING);
+    }
+    for (int x = 0; x < CUBES_SLICE_X; ++x) {
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            for (const auto it : data[x][y]) {
+                tempHist[x]->Fill(it);
+            }
+        }
+
+        if (tempHist[x]->GetEntries() > 500) { // спец. кат
+            tempHist[x]->Draw();
+            tempHist[x]->GetXaxis()->SetTitle("Crosstalk");
+            tempHist[x]->GetYaxis()->SetTitle("N");
+            tempHist[x]->Write();
+
+            double pixel_mean = tempHist[x]->GetMean();
+            if (pixel_mean > 0 && pixel_mean < cut) {
+                hist->SetBinContent(x, pixel_mean);
+            }
+        }
+    }
+}
+
+void XTalk4sideHistogramManager::FillPixelAverageData_Vert(TDirectory* dir, const std::vector<double>(&data)[CUBES_SLICE_X][CUBES_SLICE_Y], TH1F* hist, const std::string& title, double cut) {
+        dir->cd();
+        std::unique_ptr<TH1F> tempHist[CUBES_SLICE_Y];
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            std::string name = title + '_' + std::to_string(y);
+            tempHist[y] =  std::make_unique<TH1F>(name.c_str(), name.c_str(), XTALK_BINNING);
+        }
+        for (int y = 0; y < CUBES_SLICE_Y; ++y) {
+            for (int x = 0; x < CUBES_SLICE_X; ++x) {
+                for (const auto it : data[x][y]) {
+                    tempHist[y]->Fill(it);
+                }
+            }
+            if ( tempHist[y]->GetEntries() > 500) { // спец. кат, раньше было 25000
+                tempHist[y]->Draw();
+                tempHist[y]->GetXaxis()->SetTitle("Crosstalk");
+                tempHist[y]->GetYaxis()->SetTitle("N");
+                tempHist[y]->Write();
+
+                double pixel_mean = tempHist[y]->GetMean();
+                if (pixel_mean > 0 && pixel_mean < cut) {
+                    hist->SetBinContent(y, pixel_mean);
+                }
+            }
+        }
+    }

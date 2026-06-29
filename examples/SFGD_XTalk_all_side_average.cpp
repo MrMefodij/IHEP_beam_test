@@ -1,5 +1,5 @@
 //
-// Created by Angelina Chvirova on 23.01.2025.
+// Created by Angelina Chvirova on 09.06.2026.
 //
 #include <string>
 #include <fstream>
@@ -25,33 +25,33 @@ bool Find_cube(const std::map<int,CubeConnection>* map, const std::map<int,CubeP
 
     if (x < 50 && y < 50 && z < 50) {
 
-    if (channels_map->find(x) == channels_map->end()) {
-        std::cerr << "Warning: Channel " << x << " not in geometry map!" << std::endl;
-        return false;
-    }
+        if (channels_map->find(x) == channels_map->end()) {
+            std::cerr << "Warning: Channel " << x << " not in geometry map!" << std::endl;
+            return false;
+        }
 
-    x_position_cube = channels_map->at(y)._cube_x;
-    y_position_cube = channels_map->at(x)._cube_y;
-    z_position_cube = channels_map->at(x)._cube_z;
+        x_position_cube = channels_map->at(y)._cube_x;
+        y_position_cube = channels_map->at(x)._cube_y;
+        z_position_cube = channels_map->at(x)._cube_z;
 
-    auto itLocation = locationMap->find(cube);
-    if (itLocation == locationMap->end()) return false;
-    x_min = itLocation->second._x_min;
-    x_max = itLocation->second._x_max;
-    y_min = itLocation->second._y_min;
-    y_max = itLocation->second._y_max;
+        auto itLocation = locationMap->find(cube);
+        if (itLocation == locationMap->end()) return false;
+        x_min = itLocation->second._x_min;
+        x_max = itLocation->second._x_max;
+        y_min = itLocation->second._y_min;
+        y_max = itLocation->second._y_max;
 
 
-    xt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitX) {
-        return hitX._channel_id == x;
-    });
-    yt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitY) {
-        return hitY._channel_id == y;
-    });
-    zt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitZ) {
-        return hitZ._channel_id == z;
-    });
-    return true;
+        xt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitX) {
+            return hitX._channel_id == x;
+        });
+        yt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitY) {
+            return hitY._channel_id == y;
+        });
+        zt = std::find_if(hit->_channelsData.begin(), hit->_channelsData.end(), [&](const auto &hitZ) {
+            return hitZ._channel_id == z;
+        });
+        return true;
     }
 }
 
@@ -76,7 +76,9 @@ int main( int argc, char **argv ) {
     if (pos != std::string::npos) {
         OutputDirName = filename.substr(0, pos + 1);
     }
-    std::shared_ptr<TFile> out = std::make_shared<TFile>((OutputDirName + "All_XTalk_4_side.root").c_str(), "recreate");
+//    std::shared_ptr<TFile> out = std::make_shared<TFile>((OutputDirName + "All_XTalk_4_side_horizontal.root").c_str(), "recreate");
+
+    std::shared_ptr<TFile> out = std::make_shared<TFile>((OutputDirName + "All_XTalk_4_side_vertical.root").c_str(), "recreate");
 
     std::vector<std::string> dataFiles = GetDataFiles(OutputDirName, ".root", "_HitStructure.");
     for (const auto& file : dataFiles) {
@@ -131,16 +133,19 @@ int main( int argc, char **argv ) {
                         double x_ly = xt->_chargePE_Amplitude / fibers_s_normalization->at(xt->_channel_id);
                         double y_ly = yt->_chargePE_Amplitude / fibers_s_normalization->at(yt->_channel_id);
 
-                        if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() &&
-                            zt != hit->_channelsData.end()) {
-                            if ((x_ly > 0 || y_ly > 0)
-                                && xt->_quality < 100 && yt->_quality < 100 && xt->_time > 205 && xt->_time < 280 &&
-                                yt->_time > 205 && yt->_time < 280 && zt->_time > 205 && zt->_time < 280) {
+                        if ((x_ly > 0 || y_ly > 0)
+                            && xt->_quality < 100 && yt->_quality < 100 && xt->_time > 205 && xt->_time < 280 &&
+                            yt->_time > 205 && yt->_time < 280 && zt->_time > 205 && zt->_time < 280) {
 
-                                for (int cube_xTalk: {cube - 21, cube + 21, cube - 3, cube + 3}) {
+                            double y_ly_xTalk_left = 0.0;
+                            double y_ly_xTalk_right = 0.0;
 
-                                    if (cube_xTalk < 1 || cube_xTalk > 102)
-                                        continue; // 102 - зависит от размеров сборки // спец. кат
+                            double x_ly_xTalk_up = 0.0;
+                            double x_ly_xTalk_down = 0.0;
+
+                                for (int cube_xTalk: {cube - 21, cube + 21}) {
+//                                    for (int cube_xTalk: {cube - 3, cube + 3}) { // горизонтальные
+                                    if (cube_xTalk < 1 || cube_xTalk > 102) continue;
 
                                     auto itConnection = map->find(cube_xTalk);
                                     if (itConnection == map->end()) continue;
@@ -172,55 +177,66 @@ int main( int argc, char **argv ) {
                                                                      return ch._channel_id == z_xTalk;
                                                                  });
 
+//                                    if (xt_xTalk->_channel_id == -1 || yt_xTalk->_channel_id == -1 ||
+//                                        zt_xTalk->_channel_id == -1)
+//                                        continue;
+
+//                                    double y_ly_xTalk = 0.0;
                                     double x_ly_xTalk = 0.0;
-                                    double y_ly_xTalk = 0.0;
 
-                                    if (xt_xTalk->_channel_id == -1 || yt_xTalk->_channel_id == -1 ||
-                                        zt_xTalk->_channel_id == -1)
-                                        continue;
+//                                    if (yt_xTalk != hit->_channelsData.end() &&
+//                                        (yt_xTalk->_time > 205 && yt_xTalk->_time < 280)) {
+//                                        y_ly_xTalk = yt_xTalk->_chargePE_Amplitude /
+//                                                     fibers_s_normalization->at(yt_xTalk->_channel_id);
+//                                    }
 
-                                    if (xt_xTalk != hit->_channelsData.end() &&
-                                        (xt_xTalk->_time > 205 && xt_xTalk->_time < 280)) {
-                                        x_ly_xTalk = xt_xTalk->_chargePE_Amplitude /
-                                                     fibers_s_normalization->at(xt_xTalk->_channel_id);
-//                                        std::cout << "Cube: " << cube << " Сube_xTalk: " << cube_xTalk << " LY: "
-//                                                  << x_ly_xTalk << std::endl;
-                                    }
-
-                                    if (yt_xTalk != hit->_channelsData.end() &&
-                                        (yt_xTalk->_time > 205 && yt_xTalk->_time < 280)) {
-                                        y_ly_xTalk = yt_xTalk->_chargePE_Amplitude /
-                                                     fibers_s_normalization->at(yt_xTalk->_channel_id);
-                                    }
-
-                                    if (x_ly_xTalk < x_ly) {
-                                    if ((cube_xTalk - cube) == 21) {
-                                        hists.SetBinContentXTalk4side_up(x_position - x_min,
-                                                                         y_position - y_min,
-                                                                         x_ly_xTalk / x_ly, x_ly,
-                                                                         x_ly_xTalk);
-                                    }
-                                    if ((cube_xTalk - cube) == -21) {
-                                        hists.SetBinContentXTalk4side_down(x_position - x_min,
-                                                                           y_position - y_min,
-                                                                           x_ly_xTalk / x_ly, x_ly,
-                                                                           x_ly_xTalk);
-                                    }
-                                }
-                                    if (y_ly_xTalk < y_ly) {
-                                    if ((cube_xTalk - cube) == -3) {
-                                        hists.SetBinContentXTalk4side_left(x_position - x_min,
-                                                                           y_position - y_min,
-                                                                           y_ly_xTalk / y_ly, y_ly,
-                                                                           y_ly_xTalk);
-                                    }
-                                    if ((cube_xTalk - cube) == 3) {
-                                        hists.SetBinContentXTalk4side_right(x_position - x_min,
-                                                                            y_position - y_min,
-                                                                            y_ly_xTalk / y_ly, y_ly,
-                                                                            y_ly_xTalk);
-                                            }
+                                        if (xt_xTalk != hit->_channelsData.end() &&
+                                            (xt_xTalk->_time > 205 && xt_xTalk->_time < 280)) {
+                                            x_ly_xTalk = xt_xTalk->_chargePE_Amplitude /
+                                                         fibers_s_normalization->at(xt_xTalk->_channel_id);
                                         }
+
+//                                    if ((cube_xTalk - cube) == -3) {
+//                                        y_ly_xTalk_left = y_ly_xTalk;
+//                                    } else if ((cube_xTalk - cube) == 3) {
+//                                        y_ly_xTalk_right = y_ly_xTalk;
+//                                    }
+
+                                        if ((cube_xTalk - cube) == -21) {
+                                        x_ly_xTalk_down = x_ly_xTalk;
+                                    } else if ((cube_xTalk - cube) == 21) {
+                                        x_ly_xTalk_up = x_ly_xTalk;
+                                    }
+
+//                                    if (y_ly_xTalk_left < y_ly && y_ly_xTalk_right < y_ly) {
+
+                                        if (x_ly_xTalk_down < x_ly && x_ly_xTalk_up < x_ly) {
+
+//                                        std::cout << "Cube: " << cube << " LY: " << y_ly << " Сube_xTalk_left: " << cube - 3
+//                                                  << " LY_xTalk: "
+//                                                  << y_ly_xTalk_left << std::endl;
+//                                        std::cout << "Cube: " << cube << " LY: " << y_ly << " Сube_xTalk_right: "
+//                                                  << cube + 3 << " LY_xTalk: "
+//                                                  << y_ly_xTalk_right << std::endl;
+
+//                                        double avr_y_ly_xTalk = (y_ly_xTalk_left + y_ly_xTalk_right) / 2.0;
+
+                                        double avr_x_ly_xTalk = (x_ly_xTalk_down + x_ly_xTalk_up) / 2.0;
+
+//                                        hists.SetBinContentXTalk4side_horiz(
+//                                                x_position - x_min,
+//                                                y_position - y_min,
+//                                                avr_y_ly_xTalk / y_ly,
+//                                                y_ly,
+//                                                avr_y_ly_xTalk
+//                                        );
+                                            hists.SetBinContentXTalk4side_vert(
+                                                    x_position - x_min,
+                                                    y_position - y_min,
+                                                    avr_x_ly_xTalk / x_ly,
+                                                    x_ly,
+                                                    avr_x_ly_xTalk
+                                            );
                                     }
                                 }
                             }

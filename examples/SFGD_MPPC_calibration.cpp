@@ -11,11 +11,13 @@
 #include "connection_map.h"
 #include "Pnpi_structure.h"
 #include "FileHandler.h"
+#include <algorithm>
+#include <iostream>
 
 void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHandler* fileOut, TDirectory* directory, const char charge) {
     {
-        TH1F gain = TH1F("gain","gain",100,0,20);
-        TH1F x_talk = TH1F("x_talk","x_talk",100,0, 30);
+        TH1F gain = TH1F("gain","gain",100, 0, 20);
+        TH1F x_talk = TH1F("x_talk","x_talk",100, 0, 30);
 
         std::string fileOutput;
         size_t pos = filename.rfind('.');
@@ -32,10 +34,9 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
             std::cerr << "Error while openning file: "<< fileOutput << std::endl;
             return;
         }
-        outFile <<"ch gain gain_error peak_1 peak_1_error mean_w/_background x-talk_w/_background mean_w/o_background x-talk_w/o_background\n";
+        outFile <<"ch gain gain_error pedestal pedestal_error mean_w_background x-talk\n";
 
         std::map<int , PNPI::WaveFormParamStruct>* hits = fileInput->getSelfTreeStructure();
-        std::map<int , PNPI::WaveFormParamStruct>* hits_beam = fileInput->getBeamTreeStructure();
         std::set<int>* availableChannels = fileInput->GetChannels();
 
         TSpectrum *fTSpectrum = new TSpectrum(60);
@@ -82,14 +83,15 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
             }
 
             auto beam_entry = fileInput->GetBeamEntry(ch);
+            auto& main_sipm_data = fileInput->getTreeStructure()->_sipmData;
             for (int i = 0; i < beam_entry; ++i) {
                 fileInput->GetNextBeamEntry(i, ch);
-                if  (hits_beam->at(ch).Q < 1000) {
-                    if (hits_beam->at(ch).A > 5) {
+                if (main_sipm_data.count(ch) > 0 /*нужен ли кат на 0?*/ && main_sipm_data.at(ch).Q < 1000) {
+                    if (main_sipm_data.at(ch).A > 5) {
                         if (charge == 'A') {
-                            hFEBCH->Fill(hits_beam->at(ch).A);
+                            hFEBCH->Fill(main_sipm_data.at(ch).A);
                         } else {
-                            hFEBCH->Fill(hits_beam->at(ch).I);
+                            hFEBCH->Fill(main_sipm_data.at(ch).I);
                         }
                     }
                 }
@@ -111,6 +113,8 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
             hCH_xtalk->GetYaxis()->SetTitle("N");
             hCH_xtalk->Write();
 
+            std::set<int> special_channels = {12, 24, 52, 53, 54, 58}; // проблемные каналы
+
             TH1* histBackground;
             if (charge == 'A') {
                 histBackground = fTSpectrum->Background(hFEBCH, 10, "");
@@ -121,7 +125,11 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
 
             int nfound;
             if (charge == 'A') {
-                nfound = fTSpectrum->Search(hFEBCH,2,"",0.001);
+                if (special_channels.count(ch)) {
+                    nfound = fTSpectrum->Search(hFEBCH,1,"",0.005);
+                } else {
+                    nfound = fTSpectrum->Search(hFEBCH,2,"",0.001);
+                }
             } else {
                 nfound = fTSpectrum->Search(hFEBCH,4,"",0.002);
             }
@@ -136,29 +144,46 @@ void Calib(const std::string& filename, PNPI::PnpiRootFile* fileInput,  FileHand
                     double first_peak;
                     double cut = 40;
                     if (charge == 'A') {
-                        first_peak = 6.5;
+                        if (special_channels.count(ch)) {
+                            first_peak = 8.0;
+                        } else {
+                            first_peak = 6.5;
+                        }
                     } else {
                         first_peak = 40;
                     }
-                    double last_peak = xpeaks[0];
-                    if ( (i == 0 && xpeaks[0] > first_peak) || ( i != 0  && xpeaks[i] > xpeaks[i - 1] && xpeaks[i] > last_peak + 5 && xpeaks[i] < cut) )  {
-                        TF1* fit_1;
-                        if (charge == 'A') {
-                            fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 3, xpeaks[i] + 3);
-                        } else {
-                            fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 10, xpeaks[i] + 10);
-                        }
-                        last_peak = xpeaks[i];
+                    double last_peak = 0.0;
+                    uint peakNumber = 0;
 
-                        hFEBCH->Fit("fit_1", "qr+");
-                        if (peakNumber == 0) {
-                            pedestal = fit_1->GetParameter(1);
-                            pedestalError = fit_1->GetParameter(2);
+                    for (uint i = 0; i < nfound; ++i) {
+                        bool is_above_threshold = (xpeaks[i] > first_peak);
+                        bool is_far_enough = (last_peak == 0.0 || xpeaks[i] > last_peak + 5.0);
+                        bool is_within_cut = (xpeaks[i] < cut);
+
+                        if (is_above_threshold && is_far_enough && is_within_cut) {
+
+                            TF1* fit_1 = nullptr;
+
+                            if (special_channels.count(ch)) {
+                                fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 2, xpeaks[i] + 2);
+                            } else {
+                                fit_1 = new TF1("fit_1", "gaus", xpeaks[i] - 3, xpeaks[i] + 3);
+                            }
+                            hFEBCH->Fit("fit_1", "qr+");
+
+                            double peak_pos = fit_1->GetParameter(1);
+
+                            if (peakNumber == 0) {
+                                pedestal = peak_pos;
+                                pedestalError = fit_1->GetParameter(2);
+                            }
+
+                            gr->AddPoint(peakNumber + 1, peak_pos);
+                            gr->SetPointError(peakNumber, 0, fit_1->GetParameter(2));
+                            last_peak = peak_pos;
+                            delete fit_1;
+                            peakNumber++;
                         }
-                        gr->AddPoint(peakNumber + 1, fit_1->GetParameter(1));
-                        gr->SetPointError(peakNumber, 0, fit_1->GetParameter(2));
-                        delete fit_1;
-                        peakNumber++;
                     }
                 }
                 gr->Fit(f1, "qp");

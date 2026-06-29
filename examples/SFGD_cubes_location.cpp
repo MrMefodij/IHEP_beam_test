@@ -119,7 +119,7 @@ int main( int argc, char **argv ) {
     std::ofstream fileOut(CUBES_BOUNDARIES_MAP);
 //    int threshold = 70;
 //    hists.FindHighDensityArea(threshold, fileOut);
-    hists.FindHighDensityArea(900, fileOut); // кат на количество вхождений в гистограмму
+    hists.FindHighDensityArea(900, fileOut); // спец. кат на количество вхождений в гистограмму
     hists.WriteHistograms(out.get());
     return 0;
 }
