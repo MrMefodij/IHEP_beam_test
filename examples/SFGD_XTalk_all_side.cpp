@@ -1,6 +1,7 @@
 //
 // Created by Angelina Chvirova on 23.01.2025.
 //
+
 #include <string>
 #include <fstream>
 #include <memory>
@@ -63,7 +64,7 @@ int main( int argc, char **argv ) {
     const std::map<int,CubeConnection>* map = connectionMap.GetCubesMap();
     const std::map<int,CubePosition>* locationMap = connectionMap.GetCubesLocation();
     const std::map<int,GeomPosition>* channels_map = connectionMap.GetChannelMap();
-    const std::map<int, double>* fibers_s_normalization = connectionMap.GetFibersNormalization();
+//    const std::map<int, double>* fibers_s_normalization = connectionMap.GetFibersNormalization();
 
     XTalk4sideHistogramManager hists;
     hists.SetTitlesHistXTalk4side_1D("CrossTalk", "N");
@@ -113,23 +114,23 @@ int main( int argc, char **argv ) {
 
                     if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() &&
                         zt != hit->_channelsData.end()) {
-                        auto it_x = fibers_s_normalization->find(xt->_channel_id);
-                        auto it_y = fibers_s_normalization->find(yt->_channel_id);
+                        auto it_x = 1;
+                        auto it_y = 1;
 
-                        if (it_x == fibers_s_normalization->end() || it_y == fibers_s_normalization->end()) {
-                            std::cerr << "Ошибка: канал не найден в fibers_s_normalization" << std::endl;
-                            std::cerr << "Файл: " << file << std::endl;
-                            if (it_x == fibers_s_normalization->end()) {
-                                std::cerr << "Не найден канал с id: " << xt->_channel_id << std::endl;
-                            }
-                            if (it_y == fibers_s_normalization->end()) {
-                                std::cerr << "Не найден канал с id: " << yt->_channel_id << std::endl;
-                            }
-                            continue;
-                        }
+//                        if (it_x == fibers_s_normalization->end() || it_y == fibers_s_normalization->end()) {
+//                            std::cerr << "Ошибка: канал не найден в fibers_s_normalization" << std::endl;
+//                            std::cerr << "Файл: " << file << std::endl;
+//                            if (it_x == fibers_s_normalization->end()) {
+//                                std::cerr << "Не найден канал с id: " << xt->_channel_id << std::endl;
+//                            }
+//                            if (it_y == fibers_s_normalization->end()) {
+//                                std::cerr << "Не найден канал с id: " << yt->_channel_id << std::endl;
+//                            }
+//                            continue;
+//                        }
 
-                        double x_ly = xt->_chargePE_Amplitude / fibers_s_normalization->at(xt->_channel_id);
-                        double y_ly = yt->_chargePE_Amplitude / fibers_s_normalization->at(yt->_channel_id);
+                        double x_ly = xt->_chargePE_Amplitude;
+                        double y_ly = yt->_chargePE_Amplitude;
 
                         if (xt != hit->_channelsData.end() && yt != hit->_channelsData.end() &&
                             zt != hit->_channelsData.end()) {
@@ -137,9 +138,9 @@ int main( int argc, char **argv ) {
                                 && xt->_quality < 100 && yt->_quality < 100 && xt->_time > 205 && xt->_time < 280 &&
                                 yt->_time > 205 && yt->_time < 280 && zt->_time > 205 && zt->_time < 280) {
 
-                                for (int cube_xTalk: {cube - 21, cube + 21, cube - 3, cube + 3}) {
+                                for (int cube_xTalk: {cube - 25, cube + 25, cube - 5, cube + 5}) {
 
-                                    if (cube_xTalk < 1 || cube_xTalk > 102)
+                                    if (cube_xTalk < 1 || cube_xTalk > 125)
                                         continue; // 102 - зависит от размеров сборки // спец. кат
 
                                     auto itConnection = map->find(cube_xTalk);
@@ -153,7 +154,7 @@ int main( int argc, char **argv ) {
                                     // если канал не существует (-1)
                                     if (x_xTalk < 0 || y_xTalk < 0 || z_xTalk < 0) continue;
 
-                                    if (x_xTalk < 50 && y_xTalk < 50 && z_xTalk < 50) {
+//                                    if (x_xTalk < 50 && y_xTalk < 50 && z_xTalk < 50) { // убрать?
 
                                     auto xt_xTalk = std::find_if(hit->_channelsData.begin(),
                                                                  hit->_channelsData.end(),
@@ -181,26 +182,26 @@ int main( int argc, char **argv ) {
 
                                     if (xt_xTalk != hit->_channelsData.end() &&
                                         (xt_xTalk->_time > 205 && xt_xTalk->_time < 280)) {
-                                        x_ly_xTalk = xt_xTalk->_chargePE_Amplitude /
-                                                     fibers_s_normalization->at(xt_xTalk->_channel_id);
+                                        x_ly_xTalk = xt_xTalk->_chargePE_Amplitude;
+//                                                     fibers_s_normalization->at(xt_xTalk->_channel_id)
 //                                        std::cout << "Cube: " << cube << " Сube_xTalk: " << cube_xTalk << " LY: "
 //                                                  << x_ly_xTalk << std::endl;
                                     }
 
                                     if (yt_xTalk != hit->_channelsData.end() &&
                                         (yt_xTalk->_time > 205 && yt_xTalk->_time < 280)) {
-                                        y_ly_xTalk = yt_xTalk->_chargePE_Amplitude /
-                                                     fibers_s_normalization->at(yt_xTalk->_channel_id);
+                                        y_ly_xTalk = yt_xTalk->_chargePE_Amplitude;
+//                                                     fibers_s_normalization->at(yt_xTalk->_channel_id);
                                     }
 
                                     if (x_ly_xTalk < x_ly) {
-                                    if ((cube_xTalk - cube) == 21) {
+                                    if ((cube_xTalk - cube) == 25) {
                                         hists.SetBinContentXTalk4side_up(x_position - x_min,
                                                                          y_position - y_min,
                                                                          x_ly_xTalk / x_ly, x_ly,
                                                                          x_ly_xTalk);
                                     }
-                                    if ((cube_xTalk - cube) == -21) {
+                                    if ((cube_xTalk - cube) == -25) {
                                         hists.SetBinContentXTalk4side_down(x_position - x_min,
                                                                            y_position - y_min,
                                                                            x_ly_xTalk / x_ly, x_ly,
@@ -208,13 +209,13 @@ int main( int argc, char **argv ) {
                                     }
                                 }
                                     if (y_ly_xTalk < y_ly) {
-                                    if ((cube_xTalk - cube) == -3) {
+                                    if ((cube_xTalk - cube) == -5) {
                                         hists.SetBinContentXTalk4side_left(x_position - x_min,
                                                                            y_position - y_min,
                                                                            y_ly_xTalk / y_ly, y_ly,
                                                                            y_ly_xTalk);
                                     }
-                                    if ((cube_xTalk - cube) == 3) {
+                                    if ((cube_xTalk - cube) == 5) {
                                         hists.SetBinContentXTalk4side_right(x_position - x_min,
                                                                             y_position - y_min,
                                                                             y_ly_xTalk / y_ly, y_ly,
@@ -229,7 +230,6 @@ int main( int argc, char **argv ) {
                 }
             }
         }
-    }
 
     hists.WriteHistograms(out.get());
     return 0;

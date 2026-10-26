@@ -102,7 +102,7 @@ int main( int argc, char **argv ) {
                     zt != hit->_channelsData.end()) {
 //                    if (xt->_amplitude > 80 && yt->_amplitude > 80 && zt->_amplitude > 80) { // кат на порог в каналах ADC
                     if (xt->_chargePE_Amplitude > 8 && yt->_chargePE_Amplitude > 8 && zt->_chargePE_Amplitude > 8) { // кат на порог в PE
-                        double z_pos_geom = channels_map->at(x_id)._cube_z;
+                        double z_pos_geom = (j-1)%5;
                         double x_p = hit->_Ax * (CUBES_POSITION - 1 + z_pos_geom) + hit->_Bx;
                         double y_p = hit->_Ay * (CUBES_POSITION - 1 + z_pos_geom) + hit->_By;
 

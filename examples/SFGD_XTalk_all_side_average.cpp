@@ -1,6 +1,7 @@
 //
 // Created by Angelina Chvirova on 09.06.2026.
 //
+
 #include <string>
 #include <fstream>
 #include <memory>
@@ -196,15 +197,15 @@ int main( int argc, char **argv ) {
                                                          fibers_s_normalization->at(xt_xTalk->_channel_id);
                                         }
 
-//                                    if ((cube_xTalk - cube) == -3) {
+//                                    if ((cube_xTalk - cube) == -5) {
 //                                        y_ly_xTalk_left = y_ly_xTalk;
-//                                    } else if ((cube_xTalk - cube) == 3) {
+//                                    } else if ((cube_xTalk - cube) == 5) {
 //                                        y_ly_xTalk_right = y_ly_xTalk;
 //                                    }
 
-                                        if ((cube_xTalk - cube) == -21) {
+                                        if ((cube_xTalk - cube) == -25) {
                                         x_ly_xTalk_down = x_ly_xTalk;
-                                    } else if ((cube_xTalk - cube) == 21) {
+                                    } else if ((cube_xTalk - cube) == 25) {
                                         x_ly_xTalk_up = x_ly_xTalk;
                                     }
 

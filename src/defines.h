@@ -11,11 +11,11 @@
 #define CHANNELS_VS_CUBES "../connection/channels_vs_cubes.txt"
 #define CHANNELS_NUMBER 59 // 55
 #define CUBES_COUNT 126
-#define LAYERS_COUNT 3
+#define LAYERS_COUNT 5 //3
 #define GLOBAL_CUBE 999 //active
 #define CUBES_BOUNDARIES_MAP "../connection/cubes_boundaries.txt"
-#define CUBES_SLICE_X 160 //?
-#define CUBES_SLICE_Y 160 //?
+#define CUBES_SLICE_X 80 //?
+#define CUBES_SLICE_Y 80 //?
 #define CUBES_BINNING_X CUBES_SLICE_X, -20, 60 // координаты относительно центра камер
 #define CUBES_BINNING_Y CUBES_SLICE_Y, -40, 40 // координаты относительно центра камер
 #define CUBES_BINNING CUBES_BINNING_X, CUBES_BINNING_Y

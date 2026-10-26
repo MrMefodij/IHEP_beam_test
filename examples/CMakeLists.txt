@@ -23,3 +23,6 @@ TARGET_LINK_LIBRARIES(xTalk_all_side_avr                        Gatchina_src Pro
 
 ADD_EXECUTABLE(fiber_ly                                         SFGD_fiber_ly.cpp)
 TARGET_LINK_LIBRARIES(fiber_ly                                  Gatchina_src PrototypeHitStructure)
+
+ADD_EXECUTABLE(line_function                                    SFGD_line_function.cpp)
+TARGET_LINK_LIBRARIES(line_function                             Gatchina_src PrototypeHitStructure)

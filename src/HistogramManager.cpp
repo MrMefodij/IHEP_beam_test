@@ -73,7 +73,8 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
         }
 
         double sum = 0.0;
-        double currentThreshold = 0.0;
+        double currentThreshold1 = 0.0;
+        double currentThreshold2 = 0.0;
         int activeBins = 0, unactiveBins = 0;
         int nBinsX = hist->GetNbinsX();
         int nBinsY = hist->GetNbinsY();
@@ -96,9 +97,44 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
         double maxContent = hist->GetMaximum();
         double entries = hist->GetEntries();
 
-        currentThreshold = maxContent * 0.15; // спец. кат по количеству событий
+        double coeff1 = 0.0;
+
+        switch (cube) {
+            case 92:
+                coeff1 = 0.22;
+                break;
+            case 2: case 3: case 7: case 16: case 17: case 41: case 42: case 65: case 91: case 67:
+                coeff1 = 0.26;
+                break;
+             case 1: case 4: case 6: case 11: case 12: case 26: case 27: case 28: case 29: case 31: case 32: case 34: case 36: case 37: case 51: case 52: case 53: case 56: case 57: case 61: case 62: case 76: case 77: case 81: case 82: case 86: case 87:
+                coeff1 = 0.32;
+                break;
+             case 78: case 79: case 18:
+                coeff1 = 0.35;
+                break;
+            case 8: case 9: case 13: case 14: case 19: case 54: case 38:
+                coeff1 = 0.38;
+                break;
+            case 43:
+                coeff1 = 0.45;
+                break;
+            case 94: case 39: case 69:
+                coeff1 = 0.52;
+                break;
+            case 33: case 58: case 59: case 63: case 64: case 83: case 84: case 89: case 93: case 88:
+                coeff1 = 0.55;
+                break;
+            case 68:
+                coeff1 = 0.58;
+                break;
+            default:
+                coeff1 = 0.20;
+                break;
+        }
+
+        currentThreshold1 = maxContent * coeff1; // спец. кат по количеству событий
         // для ранов:
-        //  88 - 92
+        //  88 - 92         0.17
         //  96 - 110        0.17
         // 125 - 128        0.17
         // 129 - 143        0.18
@@ -115,7 +151,7 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
         for (int i = 1; i <= nBinsX; ++i) {
             for (int j = 1; j <= nBinsY; ++j) {
                 double binContent = hist->GetBinContent(i, j);
-                if (binContent > currentThreshold) {  // Проверка порога
+                if (binContent > currentThreshold1) {  // Проверка порога
                     double x = hist->GetXaxis()->GetBinCenter(i);
                     double y = hist->GetYaxis()->GetBinCenter(j);
 
@@ -130,7 +166,7 @@ void HistogramManager::FindHighDensityArea(int minEntries, std::ofstream& fileOu
 
         // Вывод результатов
         if (minX != std::numeric_limits<double>::max()) {
-            std::cout << "\nCube " << cube << ", dynamic threshold: " << currentThreshold << ", factor: " << factor << "\n";
+//            std::cout << "\nCube " << cube << ", dynamic threshold: " << currentThreshold << ", factor: " << factor << "\n";
 //            std::cout << "  Ratio: " << ratio << ", mean: " << meanValue << "\n";
 
             std::cout << "The boundaries of a high-density area: \n" << AS_KV(cube) <<"\n";
@@ -464,6 +500,7 @@ void LyHistogramManager::SetBinContentNormalizedLY(unsigned int index, double x,
 }
 
 void LyHistogramManager::SetBinContentNormalizedLY_layer(unsigned int index, double x, double y, double x_value, double y_value) {
+//    index = 0;
     int binXly = histogramsLY_normalized_layer_[index]->GetXaxis()->FindBin(x);
     int binYly = histogramsLY_normalized_layer_[index]->GetYaxis()->FindBin(y);
     auto currentValue_norm = histogramsLY_normalized_layer_[index]->GetBinContent(binXly,binYly);
@@ -723,7 +760,7 @@ void LyHistogramManager::NormalizeCubes() const { // нормировка по �
     nfound = fTSpectrum->Search(averageLY_.get(),10,"",0.5);
     double *LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) { // кат, было везде 15 для
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_->Fit(fit, "qr+");
             ly_norm = fit->GetParameter(1);
@@ -734,7 +771,7 @@ void LyHistogramManager::NormalizeCubes() const { // нормировка по �
     nfound = fTSpectrum->Search(averageLY_X_.get(),10,"",0.5);
     LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) { // кат, было везде 15 для
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_X_->Fit(fit, "qr+");
             ly_norm_x = fit->GetParameter(1);
@@ -745,7 +782,7 @@ void LyHistogramManager::NormalizeCubes() const { // нормировка по �
     nfound = fTSpectrum->Search(averageLY_Y_.get(),10,"",0.5);
     LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) {  // кат, было везде 15 для
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_Y_->Fit(fit, "qr+");
             ly_norm_y = fit->GetParameter(1);
@@ -758,7 +795,7 @@ void LyHistogramManager::NormalizeCubes() const { // нормировка по �
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) { // кат, было везде 15 для
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     x_CubeLY_A_recon[i]->Fit(fit, "qr+");
                     fileOut << i << " x " << fit->GetParameter(1)/ly_norm << std::endl;
@@ -771,7 +808,7 @@ void LyHistogramManager::NormalizeCubes() const { // нормировка по �
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {  // кат, было везде 15 для
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     y_CubeLY_A_recon[i]->Fit(fit, "qr+");
                     fileOut << i << " y " << fit->GetParameter(1)/ly_norm << std::endl;
@@ -795,7 +832,7 @@ void LyHistogramManager::NormalizeFibers() const{ // нормировка по �
     nfound = fTSpectrum->Search(averageLY_.get(),10,"",0.5);
     double *LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) { // кат, было везде 15 для
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7 , LyPeaks[peak] + 7);
             averageLY_->Fit(fit, "qr+");
             ly_norm = fit->GetParameter(1);
@@ -809,7 +846,7 @@ void LyHistogramManager::NormalizeFibers() const{ // нормировка по �
             if(nfound > 0) {
                 double *xpeaks = fTSpectrum->GetPositionX();
                 for (uint peak = 0; peak < nfound; ++peak) {
-                    if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                    if (xpeaks[peak] > 2 && xpeaks[peak] < 75) { // кат, было везде 15 для
                         fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                         fiberLY_[ch]->Fit(fit, "qr+");
                         fileOut << ch << " " << fit->GetParameter(1)/ly_norm << std::endl;
@@ -875,7 +912,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         a->Write();
     }
     // for (const auto& a : histogramsLY_normalized_layer_) {
-    for (int j = 0; j < 3; ++j){
+    for (int j = 0; j < LAYERS_COUNT; ++j){
         avrLY_layer->cd();
         histogramsLY_normalized_layer_.at(j)->Write();
         auto avrLY_layer_slices_X = avrLY_layer->mkdir(Form("slices_X_LY_sum_layer_%d", j));
@@ -896,7 +933,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         }
     }
     // for (const auto& a : x_HistogramsLY_normalized_layer_) {
-    for (int j = 0; j < 3; ++j){
+    for (int j = 0; j < LAYERS_COUNT; ++j){
         avrLY_layer->cd();
         x_HistogramsLY_normalized_layer_.at(j)->Write();
         auto avrLY_layer_slices_X = avrLY_layer->mkdir(Form("avr_slices_X_LY_sum_layer_%d", j));
@@ -909,7 +946,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         }
     }
     // for (const auto& a : y_HistogramsLY_normalized_layer_) {
-    for (int j = 0; j < 3; ++j){
+    for (int j = 0; j < LAYERS_COUNT; ++j){
         avrLY_layer->cd();
         y_HistogramsLY_normalized_layer_.at(j)->Write();
         auto avrLY_layer_slices_Y = avrLY_layer->mkdir(Form("avr_slices_Y_LY_sum_layer_%d", j));
@@ -958,28 +995,28 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
 
     dirName->cd();
     auto Gaus_layer = dirName->mkdir("Gaus_layer");
-    for (int j = 0; j < 3; ++j) {
+    for (int j = 0; j < LAYERS_COUNT; ++j) {
         auto gaus_layer_Summ_N = Gaus_layer->mkdir(Form("gaus_layer_Summ%d", j));
         auto gaus_layer_X_N = Gaus_layer->mkdir(Form("gaus_layer_X_%d", j));
         auto gaus_layer_Y_N = Gaus_layer->mkdir(Form("gaus_layer_Y_%d", j));
         for (int x = 0; x < CUBES_SLICE_X; ++x) {
             for (int y = 0; y < CUBES_SLICE_Y; ++y) {
-                TF1* fit = new TF1("gaus","gaus", 30 , 80);
+                TF1* fit = new TF1("gaus","gaus", 4 , 70); // 30 , 80
                 if (!pixelsDataSummLY_[j][x][y].empty()) {
                     FillPixelData(gaus_layer_Summ_N, &pixelsDataSummLY_[j][x][y], fit, histogramsLY_gaus_layer_.at(j).get(),
-                        Form("pixel_%i_%i_%i_summ", j, x, y), x, y, 200);
+                        Form("pixel_%i_%i_%i_summ", j, x, y), x, y, 1); // 200
                 }
                 //----------------------------------------//----------------------------------------//
                 if (!pixelsDataXLY_[j][x][y].empty()) {
-                    fit = new TF1("gaus","gaus", 20 , 50);
+                    fit = new TF1("gaus","gaus", 2 , 35); // 20 , 50
                     FillPixelData(gaus_layer_X_N, &pixelsDataXLY_[j][x][y], fit, x_histogramsLY_gaus_layer_.at(j).get(),
-                        Form("pixel_%i_%i_%i_x",j,x,y),x,y, 100);
+                        Form("pixel_%i_%i_%i_x",j,x,y),x,y, 1);
                 }
                 //----------------------------------------//----------------------------------------//
                 if (!pixelsDataYLY_[j][x][y].empty()) {
-                    fit = new TF1("gaus","gaus", 20 , 50);
+                    fit = new TF1("gaus","gaus", 2 , 35); // 20 , 50
                     FillPixelData(gaus_layer_Y_N, &pixelsDataYLY_[j][x][y], fit, y_histogramsLY_gaus_layer_[j].get(),
-                   Form("pixel_%i_%i_%i_y",j,x,y),x,y,100);
+                   Form("pixel_%i_%i_%i_y",j,x,y),x,y,1);
                 }
                 fit->Delete();
             }
@@ -997,7 +1034,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
     for (int x = 0; x < CUBES_SLICE_X; ++x) {
         for (int y = 0; y < CUBES_SLICE_Y; ++y) {
             summ_avr_Gaus_cube->cd();
-            TF1* fit = new TF1("gaus","gaus", 10 , 100);
+            TF1* fit = new TF1("gaus","gaus", 5 , 50); // 10 , 100
             if (!pixelsAverageSummLY_[x][y].empty()) {
                 FillPixelData(summ_avr_Gaus_cube, &pixelsAverageSummLY_[x][y], fit, histogramsAverageLY_gaus_layer_.get(),
                     Form("pixel_%i_%i_summ",x,y),x,y, 300);
@@ -1056,7 +1093,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
     nfound = fTSpectrum->Search(averageLY_.get(),10,"",0.5);
     double *LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) {
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_->Fit(fit, "qr+");
             averageLY_->Draw();
@@ -1067,7 +1104,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
     nfound = fTSpectrum->Search(averageLY_X_.get(),10,"",0.5);
     LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) {
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_X_->Fit(fit, "qr+");
             averageLY_X_->Draw();
@@ -1078,7 +1115,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
     nfound = fTSpectrum->Search(averageLY_Y_.get(),10,"",0.5);
     LyPeaks = fTSpectrum->GetPositionX();
     for (uint peak = 0; peak < nfound; ++peak) {
-        if (LyPeaks[peak] > 15 && LyPeaks[peak] < 75) {
+        if (LyPeaks[peak] > 2 && LyPeaks[peak] < 75) {
             fit = new TF1("gaus","gaus", LyPeaks[peak] - 7, LyPeaks[peak] + 7);
             averageLY_Y_->Fit(fit, "qr+");
             averageLY_Y_->Draw();
@@ -1094,7 +1131,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     x_CubeLY_A[i]->Fit(fit, "qr+");
                     break;
@@ -1108,7 +1145,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     y_CubeLY_A[i]->Fit(fit, "qr+");
                     break;
@@ -1127,7 +1164,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     x_CubeLY_A_recon[i]->Fit(fit, "qr+");
                     break;
@@ -1141,7 +1178,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
                     fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
                     y_CubeLY_A_recon[i]->Fit(fit, "qr+");
                     break;
@@ -1184,8 +1221,8 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
-                    fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
+                    fit = new TF1("gaus","gaus", xpeaks[peak] - 15, xpeaks[peak] + 15);
                     x_CubeLY_I[i]->Fit(fit, "qr+");
                     break;
                 }
@@ -1198,8 +1235,8 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
         if(nfound > 0) {
             double *xpeaks = fTSpectrum->GetPositionX();
             for (uint peak = 0; peak < nfound; ++peak) {
-                if (xpeaks[peak] > 15 && xpeaks[peak] < 75) {
-                    fit = new TF1("gaus","gaus", xpeaks[peak] - 7, xpeaks[peak] + 7);
+                if (xpeaks[peak] > 2 && xpeaks[peak] < 75) {
+                    fit = new TF1("gaus","gaus", xpeaks[peak] - 15, xpeaks[peak] + 15);
                     y_CubeLY_I[i]->Fit(fit, "qr+");
                     break;
                 }
@@ -1217,7 +1254,7 @@ void LyHistogramManager::WriteHistograms(TDirectory* dirName){
             if(nfound > 0) {
                 double *xpeaks = fTSpectrum->GetPositionX();
                 for (uint peak = 0; peak < nfound; ++peak) {
-                    if (xpeaks[peak] > 15 && xpeaks[peak] < 110) {
+                    if (xpeaks[peak] > 2 && xpeaks[peak] < 70) {
                         if (ch <= 20){ // z волокна (с 0 по 20) идут по пучку
                             fit = new TF1("gaus","gaus", xpeaks[peak] - 15, xpeaks[peak] + 15);
                         } else {
@@ -1268,10 +1305,12 @@ void LyHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* dat
             if (bestPeakIndex != -1) {
                 double x_best = xpeaks[bestPeakIndex];
 
-                if (x_best > 0 && x_best <= 3.0) { // пока спорно??
-                    tempHist->Fit(fit, "qrl+", "", x_best - 0.5,x_best + 0.5); // спец. кат для очень малых световыходов
+
+
+                if (x_best > 0 && x_best <= 3.0) { // пока спорно?? pixel
+                    tempHist->Fit(fit, "qrl+", "", x_best - 3,x_best + 3); // спец. кат для очень малых световыходов
                 } else if (x_best > 3.0 && x_best <= 15.0) {
-                    tempHist->Fit(fit, "qrl+", "", x_best - 5.0, x_best + 5.0); // когда частица попала в волокно
+                    tempHist->Fit(fit, "qrl+", "", x_best - 10.0, x_best + 10.0); // когда частица попала в волокно
                 } else if (x_best > 15.0) {
                     tempHist->Fit(fit, "qrl+", "", x_best - 12.0,
                                   x_best + 12.0); // спец. кат, было 15 для большего световыхода
@@ -1292,9 +1331,10 @@ void LyHistogramManager::FillPixelData(TDirectory* dir, std::vector<double>* dat
         double chi2 = fit->GetChisquare();
         int ndf = fit->GetNDF();
 
-        if ((pixelLY > 0 && pixelLY < cut) && (pixelSigmaErr / pixelSigma < 0.5)){ // кат на отрезание плохого фитирования (gaus layer)
+//        if ((pixelLY > 0 && pixelLY < cut) && (pixelSigmaErr / pixelSigma < 0.5)){ // кат на отрезание плохого фитирования (gaus layer)
+//        if ((pixelLY > 0 && pixelLY < 5) || ( pixelLY >= 5 & pixelLY < cut && pixelSigmaErr / pixelSigma < 0.5)){ // кат на отрезание плохого фитирования (gaus layer)
             hist->SetBinContent(x,y,pixelLY);
-        }
+//        }
     }
     tempHist->Delete();
 }
@@ -1313,7 +1353,7 @@ double LyHistogramManager::FillPixelProjectionXData(TDirectory* dirName, const s
         if(nFound > 0) {
             double *xpeaks = tSpectrum->GetPositionX();
             for (uint peak = 0; peak < nFound; ++peak) {
-                if (xpeaks[peak] > 15) {
+                if (xpeaks[peak] > 2) {
                     tempHist->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
                     break;
                 }
@@ -1348,7 +1388,7 @@ double LyHistogramManager::FillPixelProjectionYData(TDirectory* dirName, const s
         if(nFound > 0) {
             double *xpeaks = tSpectrum->GetPositionX();
             for (uint peak = 0; peak < nFound; ++peak) {
-                if (xpeaks[peak] > 15) {
+                if (xpeaks[peak] > 2) {
                     tempHist->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
                     break;
                 }
@@ -1382,7 +1422,7 @@ double LyHistogramManager::FillPixelData(std::vector<double>* data, TF1* fit, TH
         if(nFound > 0) {
             double *xpeaks = tSpectrum->GetPositionX();
             for (uint peak = 0; peak < nFound; ++peak) {
-                if (xpeaks[peak] > 15) {
+                if (xpeaks[peak] > 2) {
                     tempHist->Fit(fit,"qr+", "",xpeaks[peak] - 15, xpeaks[peak] + 15);
                     break;
                 }
@@ -1427,7 +1467,7 @@ void LyHistogramManager::FillPixelFiberData(TDirectory* dir, std::vector<double>
         if (nFound > 0) {
             double *xpeaks = tSpectrum->GetPositionX();
             for (uint peak = 0; peak < nFound; ++peak) {
-                if (xpeaks[peak] >= 18 && xpeaks[peak] < 70) {
+                if (xpeaks[peak] >= 2 && xpeaks[peak] < 70) {
                     fit = new TF1("gaus", "gaus");
                     tempHist->Fit(fit, "qr+", "", xpeaks[peak] - 15, xpeaks[peak] + 15);
                     break;
@@ -2230,7 +2270,7 @@ void XTalk4sideHistogramManager::FillPixelData(TDirectory* dir, std::vector<doub
         tempHist->Fill(it);
     }
 
-    if (tempHist->GetEntries() > 500) { // спец. кат, было 25000 для рана 125-128
+    if (tempHist->GetEntries() > 10000) { // спец. кат, было 25000 для рана 125-128
         double pixel_mean = tempHist->GetMean();
         tempHist->Draw();
         tempHist->GetXaxis()->SetTitle("Crosstalk");
@@ -2257,7 +2297,7 @@ void XTalk4sideHistogramManager::FillPixelAverageData_Left_Right(TDirectory* dir
             }
         }
 
-        if (tempHist[x]->GetEntries() > 500) { // спец. кат
+        if (tempHist[x]->GetEntries() > 10000) { // спец. кат
             tempHist[x]->Draw();
             tempHist[x]->GetXaxis()->SetTitle("Crosstalk");
             tempHist[x]->GetYaxis()->SetTitle("N");
@@ -2284,7 +2324,7 @@ void XTalk4sideHistogramManager::FillPixelAverageData_Up_Down(TDirectory* dir, c
                 tempHist[y]->Fill(it);
             }
         }
-        if ( tempHist[y]->GetEntries() > 500) { // спец. кат
+        if ( tempHist[y]->GetEntries() > 10000) { // спец. кат
             tempHist[y]->Draw();
             tempHist[y]->GetXaxis()->SetTitle("Crosstalk");
             tempHist[y]->GetYaxis()->SetTitle("N");
