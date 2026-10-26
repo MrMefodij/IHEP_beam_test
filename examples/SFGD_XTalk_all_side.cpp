@@ -6,6 +6,8 @@
 #include <fstream>
 #include <memory>
 #include <TFile.h>
+#include <stdlib.h>
+#include <cmath>
 #include "defines.h"
 #include "connection_map.h"
 #include "FileHandler.h"
@@ -138,7 +140,10 @@ int main( int argc, char **argv ) {
                                 && xt->_quality < 100 && yt->_quality < 100 && xt->_time > 205 && xt->_time < 280 &&
                                 yt->_time > 205 && yt->_time < 280 && zt->_time > 205 && zt->_time < 280) {
 
-                                for (int cube_xTalk: {cube - 25, cube + 25, cube - 5, cube + 5}) {
+                                for (int cube_xTalk: {cube - 25, cube - 50, cube - 75, cube - 100,
+                                                      cube + 25, cube + 50, cube + 75, cube + 100,
+                                                      cube + 5, cube + 10, cube + 15, cube + 20,
+                                                      cube - 5, cube - 10, cube - 15, cube - 20}) {
 
                                     if (cube_xTalk < 1 || cube_xTalk > 125)
                                         continue; // 102 - зависит от размеров сборки // спец. кат
@@ -195,28 +200,37 @@ int main( int argc, char **argv ) {
                                     }
 
                                     if (x_ly_xTalk < x_ly) {
-                                    if ((cube_xTalk - cube) == 25) {
-                                        hists.SetBinContentXTalk4side_up(x_position - x_min,
+
+                                    if ((cube_xTalk - cube) == 25 || (cube_xTalk - cube) == 50 || (cube_xTalk - cube) == 75 || (cube_xTalk - cube) == 100) {
+                                        uint neighbor = abs((cube_xTalk - cube)/25);
+                                        hists.SetBinContentXTalk4side_up(neighbor, x_position - x_min,
                                                                          y_position - y_min,
                                                                          x_ly_xTalk / x_ly, x_ly,
                                                                          x_ly_xTalk);
                                     }
-                                    if ((cube_xTalk - cube) == -25) {
-                                        hists.SetBinContentXTalk4side_down(x_position - x_min,
+                                    if ((cube_xTalk - cube) == -25 || (cube_xTalk - cube) == -50 || (cube_xTalk - cube) == -75 || (cube_xTalk - cube) == -100) {
+                                        uint neighbor = abs((cube_xTalk - cube)/25);
+                                        hists.SetBinContentXTalk4side_down(neighbor,x_position - x_min,
                                                                            y_position - y_min,
                                                                            x_ly_xTalk / x_ly, x_ly,
                                                                            x_ly_xTalk);
                                     }
                                 }
                                     if (y_ly_xTalk < y_ly) {
-                                    if ((cube_xTalk - cube) == -5) {
-                                        hists.SetBinContentXTalk4side_left(x_position - x_min,
+                                    if ((cube_xTalk - cube) == -5 || (cube_xTalk - cube) == -10 || (cube_xTalk - cube) == -15 || (cube_xTalk - cube) == -20) {
+                                        uint neighbor = abs((cube_xTalk - cube)/5);
+
+                                        hists.SetBinContentXTalk4side_left(neighbor,x_position - x_min,
                                                                            y_position - y_min,
                                                                            y_ly_xTalk / y_ly, y_ly,
                                                                            y_ly_xTalk);
                                     }
-                                    if ((cube_xTalk - cube) == 5) {
-                                        hists.SetBinContentXTalk4side_right(x_position - x_min,
+                                    if ((cube_xTalk - cube) == 5  || (cube_xTalk - cube) == 10 || (cube_xTalk - cube) == 15 || (cube_xTalk - cube) == 20) {
+                                        uint neighbor = abs((cube_xTalk - cube)/5);
+                                        if ((cube_xTalk - cube) == 20) {
+                                            std::cout << y_xTalk << " "  << yt->_channel_id << std::endl;
+                                        }
+                                        hists.SetBinContentXTalk4side_right(neighbor, x_position - x_min,
                                                                             y_position - y_min,
                                                                             y_ly_xTalk / y_ly, y_ly,
                                                                             y_ly_xTalk);

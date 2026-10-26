@@ -11,6 +11,7 @@
 #define CHANNELS_VS_CUBES "../connection/channels_vs_cubes.txt"
 #define CHANNELS_NUMBER 59 // 55
 #define CUBES_COUNT 126
+#define NEIGHBOR_COUNT 5
 #define LAYERS_COUNT 5 //3
 #define GLOBAL_CUBE 999 //active
 #define CUBES_BOUNDARIES_MAP "../connection/cubes_boundaries.txt"

@@ -177,10 +177,10 @@ public:
     void SetTitlesHistXTalk4side_1D_2(const std::string& titleX, const std::string& titleY);
     void SetTitlesHistXTalk4side_1D_3(const std::string& titleX, const std::string& titleY);
     void SetTitlesHistXTalk4side_2D(const std::string& titleX, const std::string& titleY, const std::string& titleZ);
-    void SetBinContentXTalk4side_up(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
-    void SetBinContentXTalk4side_down(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
-    void SetBinContentXTalk4side_right(double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
-    void SetBinContentXTalk4side_left(double x, double y,double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_up(uint neighbor, double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_down(uint neighbor, double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_right(uint neighbor, double x, double y, double value_XTalk, double value_LY_XTalk, double value_LY);
+    void SetBinContentXTalk4side_left(uint neighbor, double x, double y,double value_XTalk, double value_LY_XTalk, double value_LY);
     void SetBinContentXTalk4side_horiz(double x, double y,double value_XTalk, double value_LY_XTalk, double value_LY);
     void SetBinContentXTalk4side_vert(double x, double y,double value_XTalk, double value_LY_XTalk, double value_LY);
     void WriteHistograms(TDirectory* dirName) override;
@@ -202,17 +202,17 @@ public:
     }
 
 private:
-    std::unique_ptr<TH2F> histogramsXTalk_2D_up_;
-    std::unique_ptr<TH2F> histogramsXTalk_2D_down_;
-    std::unique_ptr<TH2F> histogramsXTalk_2D_right_;
-    std::unique_ptr<TH2F> histogramsXTalk_2D_left_;
+    std::unique_ptr<TH2F> histogramsXTalk_2D_up_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH2F> histogramsXTalk_2D_down_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH2F> histogramsXTalk_2D_right_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH2F> histogramsXTalk_2D_left_[NEIGHBOR_COUNT];
     std::unique_ptr<TH2F> histogramsXTalk_2D_horiz_;
     std::unique_ptr<TH2F> histogramsXTalk_2D_vert_;
 
-    std::unique_ptr<TH1F> averageXTalk_up_;
-    std::unique_ptr<TH1F> averageXTalk_down_;
-    std::unique_ptr<TH1F> averageXTalk_right_;
-    std::unique_ptr<TH1F> averageXTalk_left_;
+    std::unique_ptr<TH1F> averageXTalk_up_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH1F> averageXTalk_down_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH1F> averageXTalk_right_[NEIGHBOR_COUNT];
+    std::unique_ptr<TH1F> averageXTalk_left_[NEIGHBOR_COUNT];
     std::unique_ptr<TH1F> averageXTalk_horiz_;
     std::unique_ptr<TH1F> averageXTalk_vert_;
 

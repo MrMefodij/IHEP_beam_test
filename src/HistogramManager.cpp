@@ -1884,17 +1884,23 @@ void XTalkHistogramManager::WriteHistograms(TDirectory* dirName){
 
 // новое, касательно 4 сторон
 XTalk4sideHistogramManager::XTalk4sideHistogramManager(unsigned int count) : HistogramManager(count){
-    histogramsXTalk_2D_up_ = std::make_unique<TH2F>("Average_XTalk_2D_Up", "Average_XTalk_2D_Up", CUBES_BINNING);
-    histogramsXTalk_2D_down_ = std::make_unique<TH2F>("Average_XTalk_2D_Down", "Average_XTalk_2D_Down", CUBES_BINNING);
-    histogramsXTalk_2D_right_ = std::make_unique<TH2F>("Average_XTalk_2D_Right", "Average_XTalk_2D_Right", CUBES_BINNING);
-    histogramsXTalk_2D_left_ = std::make_unique<TH2F>("Average_XTalk_2D_Left", "Average_XTalk_2D_Left", CUBES_BINNING);
+    for (uint i = 0; i < NEIGHBOR_COUNT; ++i) {
+        histogramsXTalk_2D_up_[i] = std::make_unique<TH2F>(Form("Average_XTalk_2D_Up_%u",i), Form("Average_XTalk_2D_Up_%u",i), CUBES_BINNING);
+        histogramsXTalk_2D_down_[i] = std::make_unique<TH2F>(Form("Average_XTalk_2D_Down_%u",i), Form("Average_XTalk_2D_Down_%u",i),
+                                                          CUBES_BINNING);
+        histogramsXTalk_2D_right_[i] = std::make_unique<TH2F>(Form("Average_XTalk_2D_Right_%u",i), Form("Average_XTalk_2D_Right_%u",i),
+                                                           CUBES_BINNING);
+        histogramsXTalk_2D_left_[i] = std::make_unique<TH2F>(Form("Average_XTalk_2D_Left_%u",i), Form("Average_XTalk_2D_Left_%u",i),
+                                                          CUBES_BINNING);
+
+        averageXTalk_up_[i]= std::make_unique<TH1F>("Average_XTalk_Up", "Average_XTalk_Up", 200, 0, 1);
+        averageXTalk_down_[i]= std::make_unique<TH1F>("Average_XTalk_Down", "Average_XTalk_Down", 200, 0, 1);
+        averageXTalk_right_[i]= std::make_unique<TH1F>("Average_XTalk_Right", "Average_XTalk_Right", 200, 0, 1);
+        averageXTalk_left_[i]= std::make_unique<TH1F>("Average_XTalk_Left", "Average_XTalk_Left", 200, 0, 1);
+    }
     histogramsXTalk_2D_horiz_ = std::make_unique<TH2F>("Average_XTalk_2D_Horizontal", "Average_XTalk_2D_Horizontal", CUBES_BINNING);
     histogramsXTalk_2D_vert_ = std::make_unique<TH2F>("Average_XTalk_2D_Vertical", "Average_XTalk_2D_Vertical", CUBES_BINNING);
 
-    averageXTalk_up_ = std::make_unique<TH1F>("Average_XTalk_Up", "Average_XTalk_Up", 200, 0, 1);
-    averageXTalk_down_ = std::make_unique<TH1F>("Average_XTalk_Down", "Average_XTalk_Down", 200, 0, 1);
-    averageXTalk_right_ = std::make_unique<TH1F>("Average_XTalk_Right", "Average_XTalk_Right", 200, 0, 1);
-    averageXTalk_left_ = std::make_unique<TH1F>("Average_XTalk_Left", "Average_XTalk_Left", 200, 0, 1);
     averageXTalk_horiz_ = std::make_unique<TH1F>("Average_XTalk_Horizontal", "Average_XTalk_Horizontal", 200, 0, 1);
     averageXTalk_vert_ = std::make_unique<TH1F>("Average_XTalk_Vertical", "Average_XTalk_Vertical", 200, 0, 1);
 
@@ -1921,12 +1927,14 @@ XTalk4sideHistogramManager::XTalk4sideHistogramManager(unsigned int count) : His
 }
 
 void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D(const std::string& titleX, const std::string& titleY){
-    std::array<std::unique_ptr<TH1F>*, 6> histograms = {&averageXTalk_up_, &averageXTalk_down_, &averageXTalk_right_, &averageXTalk_left_, &averageXTalk_horiz_, &averageXTalk_vert_};
+    for (uint i = 0; i < NEIGHBOR_COUNT; ++i) {
+    std::array<std::unique_ptr<TH1F>*, 6> histograms = {&averageXTalk_up_[i], &averageXTalk_down_[i], &averageXTalk_right_[i], &averageXTalk_left_[i], &averageXTalk_horiz_, &averageXTalk_vert_};
 
     for (auto* histPtr : histograms) {
         if (histPtr && *histPtr) {
             (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
             (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+            }
         }
     }
 }
@@ -1954,96 +1962,100 @@ void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_1D_3(const std::string&
 }
 
 void XTalk4sideHistogramManager::SetTitlesHistXTalk4side_2D(const std::string &titleX, const std::string &titleY, const std::string &titleZ) {
-    std::array<std::unique_ptr<TH2F>*, 6> histograms = {&histogramsXTalk_2D_up_, &histogramsXTalk_2D_down_, &histogramsXTalk_2D_right_, &histogramsXTalk_2D_left_, &histogramsXTalk_2D_horiz_, &histogramsXTalk_2D_vert_};
+    for (uint i = 0; i < NEIGHBOR_COUNT; ++i) {
+        std::array<std::unique_ptr<TH2F> *, 6> histograms = {&histogramsXTalk_2D_up_[i], &histogramsXTalk_2D_down_[i],
+                                                             &histogramsXTalk_2D_right_[i], &histogramsXTalk_2D_left_[i],
+                                                             &histogramsXTalk_2D_horiz_, &histogramsXTalk_2D_vert_};
 
-    for (auto* histPtr : histograms) {
-        if (histPtr && *histPtr) {
-            (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
-            (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
-            (*histPtr)->GetZaxis()->SetTitle(titleZ.c_str());
+        for (auto *histPtr: histograms) {
+            if (histPtr && *histPtr) {
+                (*histPtr)->GetXaxis()->SetTitle(titleX.c_str());
+                (*histPtr)->GetYaxis()->SetTitle(titleY.c_str());
+                (*histPtr)->GetZaxis()->SetTitle(titleZ.c_str());
+            }
         }
     }
 }
 
-void XTalk4sideHistogramManager::SetBinContentXTalk4side_up(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_up(uint neighbor, double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
     //---------2D----------//
-    int x_binXly_2D = histogramsXTalk_2D_up_->GetXaxis()->FindBin(x);
-    int y_binXly_2D = histogramsXTalk_2D_up_->GetYaxis()->FindBin(y);
-    auto x_currentValue_norm_2D = histogramsXTalk_2D_up_->GetBinContent(x_binXly_2D, y_binXly_2D);
+    int x_binXly_2D = histogramsXTalk_2D_up_[neighbor]->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_up_[neighbor]->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_up_[neighbor]->GetBinContent(x_binXly_2D, y_binXly_2D);
 
-    int binX_2D = histogramsXTalk_2D_up_->GetXaxis()->FindBin(x);
-    int binY_2D = histogramsXTalk_2D_up_->GetYaxis()->FindBin(y);
-    auto currentCountX_2D = histogramsXTalk_2D_up_->GetBinContent(binX_2D, binY_2D);
+    int binX_2D = histogramsXTalk_2D_up_[neighbor]->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_up_[neighbor]->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_up_[neighbor]->GetBinContent(binX_2D, binY_2D);
 
 //    histogramsXTalk_2D_up_->Fill(x, y);
 
     double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
 //    histogramsXTalk_2D_up_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
 
-    averageXTalk_up_->Fill(value_XTalk);
+    averageXTalk_up_[neighbor]->Fill(value_XTalk);
     dist_LY_XTalk_up_->Fill(value_LY_XTalk);
     dist_LY_up_->Fill(value_LY);
     pixelsData_up_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
 }
 
-void XTalk4sideHistogramManager::SetBinContentXTalk4side_down(double x, double y,double value_XTalk, double value_LY, double value_LY_XTalk){
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_down(uint neighbor, double x, double y,double value_XTalk, double value_LY, double value_LY_XTalk){
     //---------2D----------//
-    int x_binXly_2D = histogramsXTalk_2D_down_->GetXaxis()->FindBin(x);
-    int y_binXly_2D = histogramsXTalk_2D_down_->GetYaxis()->FindBin(y);
-    auto x_currentValue_norm_2D = histogramsXTalk_2D_down_->GetBinContent(x_binXly_2D, y_binXly_2D);
+    int x_binXly_2D = histogramsXTalk_2D_down_[neighbor]->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_down_[neighbor]->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_down_[neighbor]->GetBinContent(x_binXly_2D, y_binXly_2D);
 
-    int binX_2D = histogramsXTalk_2D_down_->GetXaxis()->FindBin(x);
-    int binY_2D = histogramsXTalk_2D_down_->GetYaxis()->FindBin(y);
-    auto currentCountX_2D = histogramsXTalk_2D_down_->GetBinContent(binX_2D, binY_2D);
+    int binX_2D = histogramsXTalk_2D_down_[neighbor]->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_down_[neighbor]->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_down_[neighbor]->GetBinContent(binX_2D, binY_2D);
 
 //    histogramsXTalk_2D_down_->Fill(x, y);
 
     double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
 //    histogramsXTalk_2D_down_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
 
-    averageXTalk_down_->Fill(value_XTalk);
+    averageXTalk_down_[neighbor]->Fill(value_XTalk);
     dist_LY_XTalk_down_->Fill(value_LY_XTalk);
     dist_LY_down_->Fill(value_LY);
     pixelsData_down_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
 }
 
-void XTalk4sideHistogramManager::SetBinContentXTalk4side_right(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_right(uint neighbor, double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
     //---------2D----------//
-    int x_binXly_2D = histogramsXTalk_2D_right_->GetXaxis()->FindBin(x);
-    int y_binXly_2D = histogramsXTalk_2D_right_->GetYaxis()->FindBin(y);
-    auto x_currentValue_norm_2D = histogramsXTalk_2D_right_->GetBinContent(x_binXly_2D, y_binXly_2D);
+    int x_binXly_2D = histogramsXTalk_2D_right_[neighbor]->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_right_[neighbor]->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_right_[neighbor]->GetBinContent(x_binXly_2D, y_binXly_2D);
 
-    int binX_2D = histogramsXTalk_2D_right_->GetXaxis()->FindBin(x);
-    int binY_2D = histogramsXTalk_2D_right_->GetYaxis()->FindBin(y);
-    auto currentCountX_2D = histogramsXTalk_2D_right_->GetBinContent(binX_2D, binY_2D);
+    int binX_2D = histogramsXTalk_2D_right_[neighbor]->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_right_[neighbor]->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_right_[neighbor]->GetBinContent(binX_2D, binY_2D);
 
 //    histogramsXTalk_2D_right_->Fill(x, y);
 
     double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
 //    histogramsXTalk_2D_right_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
 
-    averageXTalk_right_->Fill(value_XTalk);
+    averageXTalk_right_[neighbor]->Fill(value_XTalk);
     dist_LY_XTalk_right_->Fill(value_LY_XTalk);
     dist_LY_right_->Fill(value_LY);
     pixelsData_right_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
 }
 
-void XTalk4sideHistogramManager::SetBinContentXTalk4side_left(double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
+void XTalk4sideHistogramManager::SetBinContentXTalk4side_left(uint neighbor, double x, double y, double value_XTalk, double value_LY, double value_LY_XTalk){
     //---------2D----------//
-    int x_binXly_2D = histogramsXTalk_2D_left_->GetXaxis()->FindBin(x);
-    int y_binXly_2D = histogramsXTalk_2D_left_->GetYaxis()->FindBin(y);
-    auto x_currentValue_norm_2D = histogramsXTalk_2D_left_->GetBinContent(x_binXly_2D, y_binXly_2D);
+    int x_binXly_2D = histogramsXTalk_2D_left_[neighbor]->GetXaxis()->FindBin(x);
+    int y_binXly_2D = histogramsXTalk_2D_left_[neighbor]->GetYaxis()->FindBin(y);
+    auto x_currentValue_norm_2D = histogramsXTalk_2D_left_[neighbor]->GetBinContent(x_binXly_2D, y_binXly_2D);
 
-    int binX_2D = histogramsXTalk_2D_left_->GetXaxis()->FindBin(x);
-    int binY_2D = histogramsXTalk_2D_left_->GetYaxis()->FindBin(y);
-    auto currentCountX_2D = histogramsXTalk_2D_left_->GetBinContent(binX_2D, binY_2D);
+    int binX_2D = histogramsXTalk_2D_left_[neighbor]->GetXaxis()->FindBin(x);
+    int binY_2D = histogramsXTalk_2D_left_[neighbor]->GetYaxis()->FindBin(y);
+    auto currentCountX_2D = histogramsXTalk_2D_left_[neighbor]->GetBinContent(binX_2D, binY_2D);
 
 //    histogramsXTalk_2D_left_->Fill(x, y);
 
     double x_newAvr_norm_2D = (x_currentValue_norm_2D * currentCountX_2D + value_XTalk)/(currentCountX_2D + 1);
 //    histogramsXTalk_2D_left_->SetBinContent(x_binXly_2D, y_binXly_2D, x_newAvr_norm_2D);
 
-    averageXTalk_left_->Fill(value_XTalk);
+    averageXTalk_left_[neighbor]->Fill(value_XTalk);
     dist_LY_XTalk_left_->Fill(value_LY_XTalk);
     dist_LY_left_->Fill(value_LY);
     pixelsData_left_LY_cube_[x_binXly_2D][y_binXly_2D].push_back(value_XTalk);
@@ -2088,17 +2100,19 @@ void XTalk4sideHistogramManager::SetBinContentXTalk4side_vert(double x, double y
 void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     auto average_XTalk_2D = dirName->mkdir("average_XTalk_2D");
     average_XTalk_2D->cd();
-    histogramsXTalk_2D_up_->Draw();
-    histogramsXTalk_2D_up_->Write();
+    for (uint i = 0; i < NEIGHBOR_COUNT; ++i) {
+        histogramsXTalk_2D_up_[i]->Draw();
+        histogramsXTalk_2D_up_[i]->Write();
 
-    histogramsXTalk_2D_down_->Draw();
-    histogramsXTalk_2D_down_->Write();
+        histogramsXTalk_2D_down_[i]->Draw();
+        histogramsXTalk_2D_down_[i]->Write();
 
-    histogramsXTalk_2D_right_->Draw();
-    histogramsXTalk_2D_right_->Write();
+        histogramsXTalk_2D_right_[i]->Draw();
+        histogramsXTalk_2D_right_[i]->Write();
 
-    histogramsXTalk_2D_left_->Draw();
-    histogramsXTalk_2D_left_->Write();
+        histogramsXTalk_2D_left_[i]->Draw();
+        histogramsXTalk_2D_left_[i]->Write();
+    }
 
     histogramsXTalk_2D_horiz_->Draw();
     histogramsXTalk_2D_horiz_->Write();
@@ -2109,21 +2123,24 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     auto average_XTalk_for_4_side = dirName->mkdir("average_XTalk_for_4_side");
     average_XTalk_for_4_side->cd();
 
+    for (uint i = 0; i < NEIGHBOR_COUNT; ++i) {
+
 //    averageXTalk_right_->Fit("landau", "r", " ", 0.02, 0.5);
-    averageXTalk_right_->Draw();
-    averageXTalk_right_->Write();
+    averageXTalk_right_[i]->Draw();
+    averageXTalk_right_[i]->Write();
 
 //    averageXTalk_left_->Fit("landau", "r", " ", 0.03, 0.5);
-    averageXTalk_left_->Draw();
-    averageXTalk_left_->Write();
+    averageXTalk_left_[i]->Draw();
+    averageXTalk_left_[i]->Write();
 
 //    averageXTalk_up_->Fit("landau", "r", " ", 0.02, 0.4);
-    averageXTalk_up_->Draw();
-    averageXTalk_up_->Write();
+    averageXTalk_up_[i]->Draw();
+    averageXTalk_up_[i]->Write();
 
 //    averageXTalk_down_->Fit("landau", "r", " ", 0.02, 0.4);
-    averageXTalk_down_->Draw();
-    averageXTalk_down_->Write();
+    averageXTalk_down_[i]->Draw();
+    averageXTalk_down_[i]->Write();
+    }
 
     averageXTalk_horiz_->Draw();
     averageXTalk_horiz_->Write();
@@ -2193,19 +2210,19 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
     for (int x = 0; x < CUBES_SLICE_X; ++x) {
         for (int y = 0; y < CUBES_SLICE_Y; ++y) {
             if (!pixelsData_right_LY_cube_[x][y].empty()) {
-                this->FillPixelData(right_2D, &pixelsData_right_LY_cube_[x][y], histogramsXTalk_2D_right_.get(),
+                this->FillPixelData(right_2D, &pixelsData_right_LY_cube_[x][y], histogramsXTalk_2D_right_[0].get(),
                                     Form("pixel_%i_%i_right", x, y), x, y,0.5);
             }
             if (!pixelsData_left_LY_cube_[x][y].empty()) {
-                this->FillPixelData(left_2D, &pixelsData_left_LY_cube_[x][y], histogramsXTalk_2D_left_.get(),
+                this->FillPixelData(left_2D, &pixelsData_left_LY_cube_[x][y], histogramsXTalk_2D_left_[0].get(),
                                     Form("pixel_%i_%i_left", x, y), x, y,0.5);
             }
             if (!pixelsData_up_LY_cube_[x][y].empty()) {
-                this->FillPixelData(up_2D, &pixelsData_up_LY_cube_[x][y], histogramsXTalk_2D_up_.get(),
+                this->FillPixelData(up_2D, &pixelsData_up_LY_cube_[x][y], histogramsXTalk_2D_up_[0].get(),
                                     Form("pixel_%i_%i_up", x, y), x, y,0.5);
             }
             if (!pixelsData_down_LY_cube_[x][y].empty()) {
-                this->FillPixelData(down_2D, &pixelsData_down_LY_cube_[x][y], histogramsXTalk_2D_down_.get(),
+                this->FillPixelData(down_2D, &pixelsData_down_LY_cube_[x][y], histogramsXTalk_2D_down_[0].get(),
                                     Form("pixel_%i_%i_down", x, y), x, y, 0.5);
             }
             if (!pixelsData_horiz_LY_cube_[x][y].empty()) {
@@ -2219,10 +2236,10 @@ void XTalk4sideHistogramManager::WriteHistograms(TDirectory* dirName){
         }
     }
     all_2D->cd();
-    histogramsXTalk_2D_right_->Write();
-    histogramsXTalk_2D_left_->Write();
-    histogramsXTalk_2D_up_->Write();
-    histogramsXTalk_2D_down_->Write();
+    histogramsXTalk_2D_right_[0]->Write();
+    histogramsXTalk_2D_left_[0]->Write();
+    histogramsXTalk_2D_up_[0]->Write();
+    histogramsXTalk_2D_down_[0]->Write();
     histogramsXTalk_2D_horiz_->Write();
     histogramsXTalk_2D_vert_->Write();
 
